@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="X-UA-Compatible"
+      content="IE=edge"
+    />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Document</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-plus/dist/index.css"
+    />
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+  </head>
+
+  <body>
+    <div id="root">
+      <!-- table -->
+      <el-table
+        :data="tableData"
+        height="100vh"
+        stripe
+        border
+        style="width: 100%"
+      >
+        <el-table-column
+          type="index"
+          width="50"
+          align="center"
+        >
+          <template #header>
+            <el-popover
+              placement="top-start"
+              title="操作提示"
+              :width="400"
+              trigger="hover"
+              content="this is content, this is content, this is content"
+            >
+              <template #reference>
+                <i class="tips"></i>
+              </template>
+              <ol>
+                <li>点击表头插入数据插入一条序列号。</li>
+                <li
+                  >在操作栏中填写数字，点击对应按钮将数据添加到前驱或后驱中。</li
+                >
+                <li>支持一次录入多个数字，多个数字用空格隔开。</li>
+                <li>完成底部验证序列的填写，即可自动计算出碰撞数据。</li>
+              </ol>
+              <el-col align="center">
+                <el-text
+                  align="center"
+                  size="small"
+                >
+                  github@user-9902
+                </el-text>
+              </el-col>
+            </el-popover>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="序列号"
+          min-width="35%"
+        >
+          <template #default="{row}">
+            <el-col>
+              <el-row>
+                <el-col :span="2">前驱:</el-col>
+                <el-col :span="22">
+                  <el-tag
+                    style="margin-right: 4px"
+                    v-for="i in row.listFront"
+                    :key="i"
+                    size="small"
+                    effect="dark"
+                    closable
+                    @close="() => {delNum(row.listFront, i); setList2(row)}"
+                  >
+                    {{i}}
+                  </el-tag>
+                </el-col>
+              </el-row>
+              <el-row style="margin-top: 4px">
+                <el-col :span="2">后驱:</el-col>
+                <el-col :span="22">
+                  <el-tag
+                    type="success"
+                    style="margin-right: 4px"
+                    v-for="i in row.listEnd"
+                    :key="i"
+                    size="small"
+                    effect="dark"
+                    closable
+                    @close="() => {delNum(row.listEnd, i); setList2(row)}"
+                  >
+                    {{i}}
+                  </el-tag>
+                </el-col>
+              </el-row>
+            </el-col>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="date"
+          label="碰撞数据"
+          min-width="12%"
+        >
+          <template #default="{row}">
+            <el-row> 前驱：{{row.listFront2.join(', ')}}</el-row>
+            <el-row> 后驱：{{row.listEnd2.join(', ')}}</el-row>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="date"
+          label="碰撞计数（前+后）"
+          min-width="10%"
+          align="center"
+        >
+          <template #default="{row}">
+            <el-text size="large">
+              <el-text class="mx-1">{{ row.listFront2.length }}</el-text>
+              <el-text
+                class="mx-1"
+                type="info"
+                size="small"
+              >
+                +
+              </el-text>
+              <el-text class="mx-1">{{row.listEnd2.length}}</el-text>
+            </el-text>
+          </template>
+        </el-table-column>
+
+        <el-table-column
+          label="操作"
+          min-width="28%"
+        >
+          <template #header>
+            <el-row>
+              <el-col
+                align="center"
+                :span="12"
+              >
+                <el-text>操作</el-text>
+              </el-col>
+
+              <el-col :span="6">
+                <el-button
+                  type="primary"
+                  @click="insertTable"
+                >
+                  插入数据
+                </el-button>
+              </el-col>
+
+              <el-col :span="6">
+                <el-button
+                  type="danger"
+                  @click="resetTable"
+                >
+                  清空全部
+                </el-button>
+              </el-col>
+            </el-row>
+          </template>
+          <template #default="scope">
+            <el-row style="text-align: center; align-items: center">
+              <el-col :span="10">
+                <el-input
+                  v-model="scope.row.value"
+                  placeholder="输入序列号，多个用空格隔开"
+                />
+              </el-col>
+              <el-col :span="14">
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="() => { addNums(scope.row, 'listFront'); setList2(scope.row) }"
+                >
+                  添加前驱
+                </el-button>
+                <el-button
+                  type="success"
+                  size="small"
+                  @click="() => { addNums(scope.row, 'listEnd'); setList2(scope.row) }"
+                >
+                  添加后驱
+                </el-button>
+                <el-button
+                  type="danger"
+                  size="small"
+                  plain
+                  @click="delRow(scope)"
+                >
+                  删除
+                </el-button>
+              </el-col>
+            </el-row>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- form -->
+      <el-row class="label-fixed">
+        <el-col :span="2">
+          <el-text> 验证序列 </el-text>
+        </el-col>
+        <el-col
+          :span="14"
+          style="text-align: left"
+        >
+          <el-row>
+            <el-col :span="2"><el-text>前驱:</el-text></el-col>
+            <el-col :span="22">
+              <el-tag
+                style="margin-right: 4px"
+                v-for="i in form.listFront"
+                :key="i"
+                size="small"
+                effect="dark"
+                closable
+                @close="()=>{delNum(form.listFront, i); setAllList2()}"
+              >
+                {{i}}
+              </el-tag>
+            </el-col>
+          </el-row>
+          <el-row style="margin-top: 4px">
+            <el-col :span="2"><el-text>后驱:</el-text></el-col>
+            <el-col :span="22">
+              <el-tag
+                type="success"
+                style="margin-right: 4px"
+                v-for="i in form.listEnd"
+                :key="i"
+                size="small"
+                effect="dark"
+                closable
+                @close="()=>{delNum(form.listEnd, i); setAllList2()}"
+              >
+                {{i}}
+              </el-tag>
+            </el-col>
+          </el-row>
+        </el-col>
+        <el-col :span="3">
+          <el-input
+            v-model="form.value"
+            placeholder="输入序列号，多个用空格隔开"
+          />
+        </el-col>
+        <el-col :span="5">
+          <el-button
+            type="primary"
+            size="small"
+            @click="()=>{addNums(form, 'listFront'); setAllList2()}"
+          >
+            添加前驱
+          </el-button>
+          <el-button
+            type="success"
+            size="small"
+            @click="()=>{addNums(form,'listEnd'); setAllList2()}"
+          >
+            添加后驱
+          </el-button>
+          <el-button
+            type="danger"
+            size="small"
+            plain
+            @click="()=>{resetForm(); setAllList2()}"
+          >
+            清空
+          </el-button>
+        </el-col>
+      </el-row>
+    </div>
+
+    <script>
+      const { createApp, reactive, ref, watch } = Vue
+      const { ElMessageBox } = ElementPlus
+
+      const app = createApp({
+        el: '#app',
+
+        setup() {
+          /** store **/
+          function throttle(fun, { delay = 500 } = {}) {
+            if (typeof delay !== 'number') throw new Error()
+            if (delay < 0) throw new Error()
+
+            let timeoutID = 0
+
+            return (...args) => {
+              clearTimeout(timeoutID)
+              timeoutID = setTimeout(() => {
+                fun(...args)
+              }, delay)
+            }
+          }
+          // 设置数据store
+          const _setStore = throttle(() => {
+            const data = JSON.stringify({ form, tableData })
+            localStorage.setItem('store', data)
+          })
+          // 获取数据store
+          function _getStore() {
+            const data = JSON.parse(localStorage.getItem('store'))
+            if (data) {
+              tableData.splice(0, 0, ...data.tableData)
+              Object.assign(form, data.form)
+            }
+          }
+
+          /** form data **/
+          const form = reactive({
+            value: '',
+            listFront: [],
+            listEnd: [],
+          })
+          // 添加前驱/后驱数据
+          function addNums(target, key) {
+            const list = target[key]
+            const value = target.value
+
+            const nums = value
+              .split(' ')
+              .filter(i => i != '' && !isNaN(Number(i)))
+              .map(i => i - 0)
+            const res = new Set([...list, ...nums].sort((a, b) => a - b))
+
+            list.length = 0
+            list.splice(0, 0, ...res)
+            target.value = ''
+
+            _setStore()
+          }
+          // 删除前驱/后驱数据
+          function delNum(target, key) {
+            const index = target.findIndex(e => e === key)
+            if (index > -1) target.splice(index, 1)
+            _setStore()
+          }
+          // 重置Form
+          function resetForm() {
+            form.listFront.length = 0
+            form.listEnd.length = 0
+
+            _setStore()
+          }
+
+          /** table data **/
+          const tableData = reactive([])
+          // 插入一条table数据
+          function insertTable() {
+            tableData.push({
+              inputValue: '',
+              listFront: [],
+              listEnd: [],
+              listFront2: [],
+              listEnd2: [],
+            })
+
+            _setStore()
+          }
+          // 重置 清空表格
+          async function resetTable() {
+            await ElMessageBox.confirm('将清空全部数据，是否继续？', '警告', {
+              confirmButtonText: '确认',
+              cancelButtonText: '取消',
+              type: 'warning',
+              confirmButtonClass: 'ExitConfirmButton',
+            })
+            tableData.length = 0
+
+            _setStore()
+          }
+          // 删除一条table数据
+          async function delRow({ $index }) {
+            await ElMessageBox.confirm('确认删除该条数据？', '提示', {
+              confirmButtonText: '确认',
+              cancelButtonText: '取消',
+              confirmButtonClass: 'ExitConfirmButton',
+            })
+            tableData.splice($index, 1)
+
+            _setStore()
+          }
+          // 设置row碰撞数据
+          function setList2(row) {
+            const set = (list, list2, target) => {
+              const map = {}
+              const res = []
+
+              list.forEach(item => (map[item] = true))
+              list2.forEach(item => {
+                if (map[item]) {
+                  res.push(item)
+                }
+              })
+
+              target.length = 0
+              target.splice(0, 0, ...res)
+            }
+            set(form.listFront, row.listFront, row.listFront2)
+            set(form.listEnd, row.listEnd, row.listEnd2)
+
+            _setStore()
+          }
+          // 设置table碰撞数据
+          function setAllList2() {
+            tableData.forEach(e => setList2(e))
+          }
+
+          /** get store **/
+          _getStore()
+
+          return {
+            addNums,
+            delNum,
+            insertTable,
+            resetTable,
+            setList2,
+            setAllList2,
+            delRow,
+            resetForm,
+            tableData,
+            form,
+          }
+        },
+      })
+      app.use(ElementPlus)
+      app.mount('#root')
+    </script>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      .tips::after {
+        content: '?';
+        font-style: normal;
+        display: block;
+        border-radius: 50%;
+        border: 1px solid var(--el-table-header-text-color);
+      }
+
+      .label-fixed {
+        padding: 12px;
+        border-top: 1px solid #efefef;
+        width: 100%;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        margin-top: 20px;
+        text-align: center;
+        justify-content: space-around;
+        align-items: center;
+        background-color: white;
+        z-index: 10;
+      }
+    </style>
+  </body>
+</html>

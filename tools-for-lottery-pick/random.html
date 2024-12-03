@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="X-UA-Compatible"
+      content="IE=edge"
+    />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Document</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-plus/dist/index.css"
+    />
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.2/echarts.min.js"></script>
+  </head>
+
+  <body>
+    <div id="root">
+      <section class="section1">
+        <el-row>
+          <el-col :span="16">
+            <el-table
+              :data="tableData"
+              height="100vh"
+              stripe
+              border
+              style="width: 100%; height: 220px"
+            >
+              <el-table-column
+                prop="date"
+                min-width="12%"
+              >
+                <template #header>
+                  <el-popover
+                    placement="top-start"
+                    title="操作提示"
+                    :width="500"
+                    trigger="hover"
+                    content="this is content, this is content, this is content"
+                  >
+                    <template #reference>
+                      <i class="tips"></i>
+                    </template>
+                    <ol>
+                      <li
+                        >在“向选区添加数字”中输入数字，点击添加按钮添加至选区</li
+                      >
+                      <li
+                        >在“挑选数字个数”中填写需要从当前选区，选出的数字个数</li
+                      >
+                      <li>在“组数”中填写希望一次性生成的组数，默认10组</li>
+                      <li>生成数字的下标颜色，和选出该数据的选区颜色对应</li>
+                    </ol>
+                    <el-col align="center">
+                      <el-text
+                        align="center"
+                        size="small"
+                      >
+                        wx@胡俊天下
+                      </el-text>
+                    </el-col>
+                  </el-popover>
+                  当前选区数据
+                </template>
+                <template #default="{row}">
+                  <el-row>
+                    <el-col :span="2"> {{row.name}}: </el-col>
+                    <el-col :span="22">
+                      <el-tag
+                        style="margin-right: 4px"
+                        v-for="(val,index) in row.list"
+                        :key="index"
+                        size="small"
+                        effect="dark"
+                        :type="row.tagType"
+                        closable
+                        @close="row.list.splice(index,1)"
+                      >
+                        {{val}}
+                      </el-tag>
+                    </el-col>
+                  </el-row>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="date"
+                label="向选区添加数字"
+                width="320px"
+              >
+                <template #default="{row}">
+                  <el-row justify="space-between">
+                    <el-col :span="18">
+                      <el-input
+                        v-model="row.inputValue"
+                        placeholder="输入数字，多个用空格隔开"
+                      />
+                    </el-col>
+                    <el-col :span="5">
+                      <el-button
+                        @click="addNumsToList(row)"
+                        type="primary"
+                      >
+                        添加
+                      </el-button>
+                    </el-col>
+                  </el-row>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="date"
+                label="挑选数字的个数"
+                width="140px"
+              >
+                <template #default="{row}">
+                  <el-row justify="space-between">
+                    <el-input
+                      v-model="row.counteValue"
+                      placeholder="请填入数字"
+                      @input="v => row.counteValue = inputValueParseInt(v)"
+                    />
+                  </el-row>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-col>
+
+          <el-col
+            :span="8"
+            style="padding: 20px"
+          >
+            <el-row justify="space-around">
+              <el-col :span="16">
+                <el-text
+                  >输入期望生成的组数，点击"生成"按钮生成随机数组</el-text
+                >
+              </el-col>
+              <el-col :span="8">
+                <el-row justify="end">
+                  <el-col :span="10">
+                    <el-input
+                      style="width: 60px"
+                      v-model="count1"
+                      @input="v => count1 = inputValueParseInt(v)"
+                      placeholder="组数"
+                    />
+                  </el-col>
+                  <el-col :span="10">
+                    <el-button
+                      @click="GeneratedDataFromList(count1 || 10)"
+                      type="primary"
+                    >
+                      生成
+                    </el-button>
+                  </el-col>
+                </el-row>
+              </el-col>
+            </el-row>
+            <el-row
+              v-for="(item,index) in randomArrFromTableData"
+              :key="index"
+              justify="center"
+            >
+              <el-text size="large">
+                <span
+                  v-for="(v,i) in item"
+                  :key="i"
+                  class="random-nums"
+                  :style="{textDecorationColor: v.color}"
+                  >{{v.value}}</span
+                >
+              </el-text>
+            </el-row>
+          </el-col>
+        </el-row>
+      </section>
+
+      <section class="section2">
+        <el-row
+          justify="space-around"
+          style="width: 600px"
+        >
+          <el-col :span="13">
+            <el-text>统计掷色子结果，输入希望投掷的次数，默认100次</el-text>
+          </el-col>
+          <el-col :span="2">
+            <el-input
+              style="width: 60px"
+              v-model="count2"
+              @input="v => count2 = inputValueParseInt(v)"
+              placeholder="次数"
+            />
+          </el-col>
+          <el-col :span="2">
+            <el-button
+              @click="setEchart"
+              type="primary"
+            >
+              统计
+            </el-button>
+          </el-col>
+        </el-row>
+        <div
+          id="echart-container"
+          style="width: 600px; height: 360px"
+        >
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const { createApp, reactive, ref, watch, onMounted } = Vue
+      const { ElMessage } = ElementPlus
+
+      const colorMap = ['#f56c6c', '#e6a23c', '#409eff']
+
+      // 错误提示
+      function err(message = '请确保数据完整', type = 'error') {
+        ElMessage({ message, type })
+      }
+
+      // [min,max)区间内的随机整数
+      function randomInt(min, max) {
+        return Math.floor(Math.random() * (max - min)) + min
+      }
+
+      // 数组中随机挑选出，指定个数且不重复的元素
+      function randomNumsFromArr(array, nums) {
+        const arr = [...array]
+        const res = []
+        for (let i = 0; i < nums; i++) {
+          const index = randomInt(0, arr.length)
+          res.push(...arr.splice(index, 1))
+        }
+        return res
+      }
+
+      // 初始化图表
+      let myChart
+      function initEchart() {
+        const el = document.getElementById('echart-container')
+        myChart = echarts.init(el)
+      }
+
+      // 设置图表选项
+      function setEchartOptions(yData = Array(16).fill(0)) {
+        myChart.setOption({
+          xAxis: {
+            type: 'category',
+            data: Array(16)
+              .fill()
+              .map((val, index) => `${index + 1}`),
+          },
+          yAxis: {
+            type: 'value',
+          },
+          series: [
+            {
+              data: yData,
+              type: 'bar',
+              itemStyle: {
+                normal: {
+                  label: {
+                    show: true,
+                    position: 'top',
+                    textStyle: {
+                      color: 'black',
+                      fontSize: 16,
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        })
+      }
+
+      // 统计随机数次数
+      function satiRandomNum(times) {
+        const res = Array(16).fill(0)
+        for (let i = 0; i < times; i++) {
+          const randomNum = randomInt(0, 16)
+          res[randomNum] += 1
+        }
+        return res
+      }
+
+      const app = createApp({
+        setup() {
+          // 数组数据
+          const tableData = reactive([
+            {
+              name: '热区',
+              list: [],
+              tagType: 'danger',
+              inputValue: '',
+              counteValue: '',
+            },
+            {
+              name: '温区',
+              list: [],
+              tagType: 'warning',
+              inputValue: '',
+              counteValue: '',
+            },
+            {
+              name: '冷区',
+              list: [],
+              tagType: '',
+              inputValue: '',
+              counteValue: '',
+            },
+          ])
+
+          function addNumsToList(row) {
+            const nums = row.inputValue
+              .split(' ')
+              .filter(i => i != '' && !isNaN(Number(i)))
+              .map(i => parseInt(i))
+
+            row.list = [...new Set([...row.list, ...nums].sort((a, b) => a - b))]
+            row.inputValue = ''
+          }
+
+          // 从数组中挑选指定个数的元素
+          const count1 = ref()
+          const randomArrFromTableData = reactive([])
+          function GeneratedDataFromList(nums) {
+            const res = []
+            for (let index = 0; index < nums; index++) {
+              const arr = []
+              for (let i = 0; i < tableData.length; i++) {
+                const { counteValue, list } = tableData[i]
+                if (!counteValue || ![...list].length)
+                  return err('请确保数据完整')
+                if (list.length < Number(counteValue))
+                  return err('挑选的数字个数，不能大于选取数组长度')
+
+                arr.push(
+                  randomNumsFromArr(list, Number(counteValue)).map(el => ({
+                    value: el,
+                    color: colorMap[i],
+                  })),
+                )
+              }
+
+              res.push([...arr.flat().sort((a, b) => a.value - b.value)])
+              arr.length = 0
+            }
+
+            randomArrFromTableData.length = 0
+            randomArrFromTableData.splice(0, 0, ...res)
+          }
+
+          function inputValueParseInt(v) {
+            return /^\d+$/.test(v) ? v : v.slice(0, -1)
+          }
+
+          // 图标相关
+          const count2 = ref()
+          function setEchart() {
+            setEchartOptions(satiRandomNum(count2.value || 100))
+          }
+          onMounted(() => {
+            initEchart()
+            setEchartOptions()
+          })
+
+          return {
+            inputValueParseInt,
+            tableData,
+            addNumsToList,
+            count1,
+            randomArrFromTableData,
+            GeneratedDataFromList,
+            count2,
+            setEchart,
+          }
+        },
+      })
+      app.use(ElementPlus)
+      app.mount('#root')
+    </script>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      .tips::after {
+        content: '?';
+        font-style: normal;
+        display: inline-block;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        line-height: 16px;
+        text-align: center;
+        border: 1px solid var(--el-table-header-text-color);
+      }
+
+      .el-row {
+        margin-bottom: 10px;
+      }
+      .el-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .section1 {
+        height: 400px;
+      }
+
+      .section2 {
+        padding: 20px;
+        height: 400px;
+      }
+
+      .random-nums {
+        margin-right: 12px;
+        text-decoration: underline;
+        text-decoration-thickness: 3px;
+      }
+    </style>
+  </body>
+</html>
