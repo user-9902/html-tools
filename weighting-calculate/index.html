@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="X-UA-Compatible"
+      content="IE=edge"
+    />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>加权均值计算器</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-plus/dist/index.css"
+    />
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+  </head>
+
+  <body>
+    <div id="root">
+      <el-tabs
+        v-model="activeTable"
+        style="height: 100vh"
+        class="demo-tabs"
+        tab-position="bottom"
+        editable
+        @edit="handleTabsEdit"
+      >
+        <template #add-icon>
+          <el-button
+            @click="addTable"
+            type="primary"
+            >新建表格</el-button
+          >
+        </template>
+
+        <el-tab-pane
+          v-for="(item,index) in tables"
+          :key="item.key"
+          :label="item.name"
+          :name="String(index)"
+        >
+          <el-table
+            height="calc(100vh - 40px)"
+            :data="item.rowDatas"
+            stripe
+            border
+          >
+            <el-table-column
+              type="index"
+              align="center"
+              width="68"
+              label="序号"
+              fixed
+            >
+              <template #default="scope">
+                <el-row
+                  align="middle"
+                  style="flex-wrap: nowrap"
+                >
+                  <p>{{scope.$index + 1 }}</p>
+
+                  <el-tooltip
+                    placement="right"
+                    :width="200"
+                    trigger="hover"
+                  >
+                    <template #default>
+                      <svg
+                        class="icon-more"
+                        data-v-d2e47025=""
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 1024 1024"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M176 416a112 112 0 1 0 0 224 112 112 0 0 0 0-224m0 64a48 48 0 1 1 0 96 48 48 0 0 1 0-96m336-64a112 112 0 1 1 0 224 112 112 0 0 1 0-224m0 64a48 48 0 1 0 0 96 48 48 0 0 0 0-96m336-64a112 112 0 1 1 0 224 112 112 0 0 1 0-224m0 64a48 48 0 1 0 0 96 48 48 0 0 0 0-96"
+                        ></path>
+                      </svg>
+                    </template>
+
+                    <template #content>
+                      <div>
+                        <p
+                          style="cursor: pointer"
+                          @click="addRow(scope.$index)"
+                          >上方插入一行</p
+                        >
+                        <p
+                          style="cursor: pointer"
+                          @click="addRow(scope.$index+1)"
+                          >下方插入一行</p
+                        >
+                        <p
+                          style="cursor: pointer"
+                          @click="swapRow(scope.$index-1, scope.$index)"
+                          >上移</p
+                        >
+                        <p
+                          style="cursor: pointer"
+                          @click="swapRow(scope.$index,scope.$index+1)"
+                          >下移</p
+                        >
+                        <p
+                          style="cursor: pointer"
+                          @click="delRow(scope.$index)"
+                          >删除当前行</p
+                        >
+                      </div>
+                    </template>
+                  </el-tooltip>
+                </el-row>
+              </template>
+            </el-table-column>
+
+            <el-table-column
+              align="center"
+              width="160"
+              label="名称"
+              fixed
+            >
+              <template #default="{row}">
+                <el-row
+                  align="middle"
+                  style="flex-wrap: nowrap"
+                >
+                  <input
+                    type="text"
+                    placeholder="请输入该条数据名称"
+                    v-model="row.name"
+                  />
+                </el-row>
+              </template>
+            </el-table-column>
+
+            <el-table-column
+              v-for="(col,index) in item.colConfig"
+              :key="col.key"
+              min-width="300"
+            >
+              <template #header="scope">
+                <el-tooltip
+                  placement="bottom"
+                  :width="200"
+                  trigger="click"
+                >
+                  <template #default>
+                    <el-col>
+                      <el-row>
+                        <p>维度名称： </p>
+                        <input
+                          type="text"
+                          v-model="col.name"
+                          @click.stop
+                        />
+                      </el-row>
+
+                      <el-row>
+                        <p>维度权值： </p>
+                        <input
+                          type="text"
+                          v-model.number="col.weight"
+                          @click.stop
+                        />
+                      </el-row>
+                    </el-col>
+                  </template>
+
+                  <template #content>
+                    <div>
+                      <p
+                        style="cursor: pointer"
+                        @click="addCol(scope.$index-2)"
+                        >左侧插入一列</p
+                      >
+                      <p
+                        style="cursor: pointer"
+                        @click="addCol(scope.$index-1)"
+                        >右侧插入一列</p
+                      >
+                      <p
+                        style="cursor: pointer"
+                        @click="delCol(scope.$index-2)"
+                        >删除当前列</p
+                      >
+                    </div>
+                  </template>
+                </el-tooltip>
+              </template>
+
+              <template #default="{row}">
+                <el-col>
+                  <el-row>
+                    <p>得分： </p>
+                    <input
+                      type="text"
+                      v-model.number="row.values[index]"
+                      placeholder="请输入"
+                    />
+                  </el-row>
+
+                  <el-row>
+                    <p style="font-size: 14px; color: #999">备注： </p>
+                    <input
+                      style="font-size: 14px; color: #999"
+                      type="text"
+                      v-model.number="row.commons[index]"
+                      placeholder="请输入"
+                    />
+                  </el-row>
+                </el-col>
+              </template>
+            </el-table-column>
+
+            <el-table-column
+              align="center"
+              sortable
+              width="120"
+              label="加权均值"
+              prop="res"
+              fixed="right"
+            >
+            </el-table-column>
+          </el-table>
+
+          <template #label>
+            <input
+              type="text"
+              placeholder="请输入表格名称"
+              style="width: 100px"
+              v-model="item.name"
+            />
+          </template>
+        </el-tab-pane>
+      </el-tabs>
+    </div>
+
+    <script>
+      const { createApp, ref, watchEffect, computed, useTemplateRef } = Vue
+      const { ElMessageBox } = ElementPlus
+
+      // utils
+      class SnowFlake {
+        last_timestamp = BigInt(-1)
+        worker_id = undefined
+        sequence = BigInt(0)
+
+        timestamp_bit = BigInt(41)
+        worker_bit = BigInt(10)
+        sequence_bit = BigInt(12)
+
+        sequence_shift = BigInt(0)
+        worker_shift = this.sequence_bit
+        timestamp_shift = this.sequence_bit + this.worker_bit
+
+        constructor(worker_id) {
+          this.worker_id = BigInt(worker_id)
+        }
+
+        generate_id() {
+          let timestamp = BigInt(new Date().getTime())
+          let sequence
+          if (timestamp === this.last_timestamp) {
+            sequence = this.sequence + BigInt(1)
+            if (sequence === BigInt(1) << this.sequence_bit) {
+              timestamp = BigInt(new Date().getTime())
+              while (timestamp === this.last_timestamp) {
+                timestamp = BigInt(new Date().getTime())
+              }
+            }
+          } else {
+            sequence = BigInt(0)
+          }
+          this.sequence = sequence
+          this.last_timestamp = timestamp
+          return String(
+            BigInt(sequence) |
+              BigInt(this.worker_id << this.worker_shift) |
+              BigInt(timestamp << this.timestamp_shift),
+          )
+        }
+      }
+      const snowFlake = new SnowFlake(1)
+      function nextId() {
+        return snowFlake.generate_id()
+      }
+
+      // module
+      class Row {
+        constructor() {
+          this.name = ''
+          this.values = []
+          this.commons = []
+          this.res = null
+          this.key = nextId()
+        }
+      }
+
+      class Col {
+        constructor() {
+          this.name = ''
+          this.weight = null
+          this.key = nextId()
+        }
+      }
+
+      class Table {
+        constructor() {
+          this.name = ''
+          this.key = nextId()
+          this.colConfig = [new Col()]
+          this.rowDatas = [new Row()]
+        }
+      }
+
+      // module
+      let t = localStorage.getItem('__tables__')
+        ? JSON.parse(localStorage.getItem('__tables__'))
+        : [new Table()]
+
+      const app = createApp({
+        el: '#app',
+
+        setup() {
+          const aaaaRef = useTemplateRef('aaaa')
+          console.log(aaaaRef)
+
+          const activeTable = ref(
+            localStorage.getItem('__activeTable__') ?? '0',
+          )
+          const tables = ref(t)
+          const curTable = computed(() => tables.value[activeTable.value])
+
+          // 计算加权均值
+          watchEffect(() => {
+            console.log(curTable.value)
+            curTable.value.rowDatas.forEach((row, i) => {
+              let a = 0
+              let b = 0
+
+              for (let i = 0; i < row.values.length; i++) {
+                a += curTable.value.colConfig[i].weight * row.values[i]
+                b += curTable.value.colConfig[i].weight
+              }
+              if (isNaN(a / b)) return
+              row.res = (a / b).toFixed(2)
+            })
+          })
+          // 缓存
+          watchEffect(() => {
+            localStorage.setItem('__activeTable__', activeTable.value)
+
+            localStorage.setItem('__tables__', JSON.stringify(tables.value))
+          })
+
+          function addTable() {
+            tables.value.push(new Table())
+            activeTable.value = Number(activeTable.value) + 1 + ''
+          }
+
+          function addRow(i) {
+            curTable.value.rowDatas.splice(i, 0, new Row())
+          }
+
+          function delRow(i) {
+            curTable.value.rowDatas.splice(i, 1)
+          }
+
+          function swapRow(a, b) {
+            if (a < 0) return
+            if (b == curTable.value.rowDatas.length) return
+
+            let a_row = curTable.value.rowDatas[a]
+            let b_row = curTable.value.rowDatas[b]
+            curTable.value.rowDatas[a] = b_row
+            curTable.value.rowDatas[b] = a_row
+          }
+
+          function addCol(i) {
+            curTable.value.colConfig.splice(i, 0, new Col())
+            curTable.value.rowDatas.forEach(item => {
+              item.values.splice(i, 0, null)
+              item.commons.splice(i, 0, null)
+            })
+          }
+
+          function delCol(i) {
+            curTable.value.rowDatas.forEach(item => {
+              item.values.splice(i, 1)
+              item.commons.splice(i, 1)
+            })
+            curTable.value.colConfig.splice(i, 1)
+          }
+
+          async function handleTabsEdit(targetName, action) {
+            if (action == 'remove') {
+              activeTable.value = targetName
+              await ElMessageBox.confirm('确认删除当前表格么？', '警告', {
+                confirmButtonText: '确认',
+                cancelButtonText: '取消',
+                type: 'warning',
+                confirmButtonClass: 'ExitConfirmButton',
+              })
+
+              const idx = Number(targetName)
+              tables.value.splice(idx, 1)
+              activeTable.value = String(idx - 1)
+            }
+          }
+
+          return {
+            // data
+            tables,
+            activeTable,
+
+            // methods
+            addTable,
+            addRow,
+            delRow,
+            swapRow,
+            addCol,
+            delCol,
+            handleTabsEdit,
+          }
+        },
+      })
+      app.use(ElementPlus)
+      app.mount('#root')
+    </script>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      input {
+        display: block;
+        width: max-content;
+        min-width: 68px;
+        font-size: 16px;
+        color: #777;
+        border: none;
+        outline: none;
+        background-color: rgba(0, 0, 0, 0);
+      }
+      input::placeholder {
+        font-size: 14px;
+        color: #999;
+      }
+
+      p {
+        margin: 0;
+      }
+
+      .icon-more {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin: 0 8px;
+        color: #999;
+      }
+
+      .tips::after {
+        content: '?';
+        font-style: normal;
+        display: block;
+        border-radius: 50%;
+        border: 1px solid var(--el-table-header-text-color);
+      }
+
+      .label-fixed {
+        padding: 12px;
+        border-top: 1px solid #efefef;
+        width: 100%;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        margin-top: 20px;
+        text-align: center;
+        justify-content: space-around;
+        align-items: center;
+        background-color: white;
+        z-index: 10;
+      }
+      .el-tabs__nav-scroll {
+        border-top: 1px solid #ccc;
+      }
+      .el-tabs__active-bar {
+        top: 0;
+      }
+      .el-tabs__new-tab {
+        width: max-content;
+        border: none;
+      }
+      .el-tabs--bottom .el-tabs__header.is-bottom {
+        margin-top: 0;
+      }
+    </style>
+  </body>
+</html>
