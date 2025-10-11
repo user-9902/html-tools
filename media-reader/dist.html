@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>媒体查看器</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-plus/dist/index.css"
+    />
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue"></script>
+    <style>
+      :root {
+        --color-black-10: #222222;
+        --color-white-10: #f7f7f7;
+      }
+
+      :root(theme="theme-dark") {
+        --bg-color: var(--color-black-10);
+      }
+
+      :root(theme="theme-light") {
+        --bg-color: var(--color-white-10);
+      }
+
+      #app {
+        background-color: var(--bg-color);
+      }
+    </style>
+  </head>
+
+  <body theme="theme-dark">
+    <div id="app">
+      <el-container>
+        <el-aside>
+          <el-tree :data="menuTree">
+            <template #default="{ node, data }">
+              <el-icon style="margin-left: 8px" @click="onChooseFloder(node)">
+                <folder />
+              </el-icon>
+
+              <span style="margin-left: 4px" @click="onChooseFloder(node)"
+                >{{ node.label }}</span
+              >
+            </template>
+          </el-tree>
+
+          <el-col>
+            <el-row v-for="file,idx in currentFloder.files" :key="idx">
+              {{file.label.replace(/.+\//g, "")}}
+            </el-row>
+          </el-col>
+        </el-aside>
+        <el-main>
+          <div v-for="(child, idx) in currentFloder.files" :key="idx">
+            <el-image :src="child.label" />
+          </div>
+        </el-main>
+      </el-container>
+    </div>
+
+    <script>
+      const { createApp, ref, onMounted, computed, watch } = Vue;
+      const { Folder } = ElementPlusIconsVue;
+
+      const menus = `{
+            "name": "public",
+            "children": [
+              {
+                "name": "p",
+                "children": [],
+                "files": [
+                  "public/p/images (1).jpeg",
+                  "public/p/images.jpeg"
+                ]
+              }
+            ],
+            "files": [
+              "public/images (1).jpeg",
+              "public/images.jpeg"
+            ]
+          }`;
+
+      createApp({
+        setup() {
+          function createNode(label, type) {
+            return {
+              label,
+              type,
+              children: [],
+              files: [],
+              parent: null
+            };
+          }
+          function dfs(node) {
+            // 处理当前节点
+            const res = createNode(node.name, "folder");
+            // 处理 children
+            for (let i = 0; i < node.children.length; i++) {
+              const element = node.children[i];
+              const child = dfs(element);
+              child.parent = res; // 设置父节点
+              res.children.push(child);
+            }
+            // 处理 files
+            for (let i = 0; i < node.files.length; i++) {
+              const element = node.files[i];
+              const child = createNode(element, "file");
+              child.parent = res; // 设置父节点
+              res.files.push(child);
+            }
+            return res;
+          }
+
+          const menuTree = ref([dfs(JSON.parse(menus))]);
+
+          const currentFloder = ref({});
+          function onChooseFloder(node) {
+            currentFloder.value = node.data;
+          }
+
+          return {
+            menuTree,
+            currentFloder,
+            onChooseFloder
+          };
+        }
+      })
+        .use(ElementPlus)
+        .component("Folder", Folder)
+        .mount("#app");
+    </script>
+  </body>
+</html>
