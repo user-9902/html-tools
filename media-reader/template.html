@@ -2,264 +2,293 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="X-UA-Compatible"
+      content="IE=edge"
+    />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
     <title>媒体查看器</title>
-    <!-- 引入Element Plus CSS -->
     <link
       rel="stylesheet"
       href="https://unpkg.com/element-plus/dist/index.css"
     />
-    <!-- 引入Vue 3 -->
     <script src="https://unpkg.com/vue@3"></script>
-    <!-- 引入Element Plus JS -->
     <script src="https://unpkg.com/element-plus"></script>
-    <!-- 引入Element Plus图标库 -->
     <script src="https://unpkg.com/@element-plus/icons-vue"></script>
     <style>
+      /* var */
       :root {
-        --color-black-10: #222222;
-        --color-white-10: #f7f7f7;
+        --color-gary-0: #fff;
+        --color-gary-1: #f7f7f7;
+        --color-gary-2: #e3e5e7;
+        --color-gary-3: #c9ccd0;
+
+        --color-gary-9: #2f3238;
+        --color-gary-10: #18191c;
+        --color-gray-99: #000;
       }
 
-      :root(theme="theme-dark") {
-        --bg-color: var(--color-black-10);
+      body[theme='theme-dark'] {
+        --bg-color: var(--color-gary-9);
+        --aside-color: var(--color-gary-10);
+        --font-color: var(--color-gary-1);
+        --hover-color: var(--color-gary-99);
       }
 
-      :root(theme="theme-light") {
-        --bg-color: var(--color-white-10);
+      body[theme='theme-light'] {
+        --bg-color: var(--color-gary-1);
+        --aside-color: var(--color-gary-2);
+        --font-color: var(--color-gary-99);
+        --hover-color: var(--color-gary-3);
+      }
+
+      /* 样式 */
+      body {
+        margin: 0;
+        color: var(--font-color);
       }
 
       #app {
         background-color: var(--bg-color);
+      }
+
+      .container {
+        & > * {
+          padding: 12px;
+          height: 100vh;
+        }
+      }
+
+      .menus {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        .menus1 {
+          padding: 8px;
+          background-color: var(--aside-color);
+          border-radius: 8px;
+          height: 46%;
+        }
+        .menus2 {
+          padding: 8px;
+          border-radius: 8px;
+          background-color: var(--aside-color);
+          height: 46%;
+        }
+        h2 {
+          font-size: 16px;
+          margin: 0;
+          margin-bottom: 4px;
+        }
+      }
+      .main-content {
+        .media-box {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+      }
+
+      .setting {
+        background-color: var(--aside-color);
+      }
+
+      .el-tree {
+        background-color: transparent;
+        color: var(--font-color);
+      }
+      .el-tree-node__content:hover {
+        background-color: var(--hover-color);
+      }
+
+      /* reset */
+      ::-webkit-scrollbar {
+        width: 0px; /* 滚动条宽度 */
+        height: 0px; /* 滚动条高度 */
       }
     </style>
   </head>
 
   <body theme="theme-dark">
     <div id="app">
-      <el-container>
-        <el-aside>
-          <!--  上传文件 -->
-          <el-upload
-            class="upload-demo"
-            drag
-            multiple
-            :before-upload="beforeUpload"
-            v-model="file"
-          >
-            <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-            <div class="el-upload__text">
-              Drop file here or <em>click to upload</em>
-            </div>
-            <template #tip>
-              <div class="el-upload__tip">
-                jpg/png files with a size less than 500kb
-              </div>
-            </template>
-          </el-upload>
+      <el-container class="container">
+        <el-aside
+          class="menus"
+          style="width: 300px"
+        >
+          <div class="menus1">
+            <h2>
+              <el-icon
+                style="top: 2px; margin-right: 4px"
+                @click="onChooseFloder(node)"
+              >
+                <folder /> </el-icon
+              >文件夹目录</h2
+            >
+            <el-tree
+              :data="menuTree"
+              style="height: calc(100% - 24px); overflow-y: scroll"
+            >
+              <template #default="{ node, data }">
+                <el-tooltip
+                  class="box-item"
+                  effect="dark"
+                  :content="node.label"
+                  placement="right-start"
+                >
+                  <span @click="onChooseFloder(node)">{{ node.label }}</span>
+                </el-tooltip>
+              </template>
+            </el-tree>
+          </div>
 
-          <el-tree
-            style="max-width: 600px"
-            :data="data"
-            :props="defaultProps"
-            @node-click="handleNodeClick"
-          />
+          <div class="menus2">
+            <h2
+              ><el-icon style="top: 2px; margin-right: 4px"><memo /></el-icon
+              >文件目录</h2
+            >
+            <el-col style="height: calc(100% - 24px); overflow-y: scroll">
+              <el-row
+                @click="()=>scrolltoTop(`content-${idx}`)"
+                v-for="file,idx in currentFloder.files"
+                :key="idx"
+              >
+                {{file.label.replace(/.+\//g, "")}}
+              </el-row>
+            </el-col>
+          </div>
         </el-aside>
-        <el-main>Main</el-main>
-        <el-image
-          style="width: 100px; height: 100px"
-          src="./root-test/images (1).jpeg"
-          :fit="fit"
-        />
+
+        <!-- content -->
+        <el-main class="main-content">
+          <div
+            :id="`content-${idx}`"
+            class="media-box"
+            v-for="(child, idx) in currentFloder.files"
+            :key="idx"
+          >
+            <el-image
+              v-if="child.fileType === 'image'"
+              :src="child.label"
+            />
+
+            <video
+              v-if="child.fileType === 'video'"
+              id="my-video"
+              class="video-js"
+              controls
+              preload="auto"
+              width="640"
+              height="264"
+              poster="MY_VIDEO_POSTER.jpg"
+              data-setup="{}"
+            >
+              <source
+                :src="child.label"
+                type="video/mp4"
+              />
+              <p class="vjs-no-js">
+                To view this video please enable JavaScript, and consider
+                upgrading to a web browser that
+                <a
+                  href="https://videojs.com/html5-video-support/"
+                  target="_blank"
+                  >supports HTML5 video</a
+                >
+              </p>
+            </video>
+          </div>
+        </el-main>
+
+        <el-aside
+          class="setting"
+          style="width: 180px"
+        >
+        </el-aside>
       </el-container>
     </div>
 
     <script>
-      const { createApp, ref, onMounted, computed } = Vue;
+      const { createApp, ref, onMounted, computed, watch } = Vue
+      const { Folder, Memo } = ElementPlusIconsVue
 
-      const menus = `{{ template }}`;
-
-      const {
-        ElTree,
-        ElEmpty,
-        ElDialog,
-        ElUpload,
-        ElContainer,
-        ElAside,
-        ElMain
-      } = ElementPlus;
-      const { UploadFilled } = ElementPlusIconsVue;
+      const menus = `{{ template }}`
 
       createApp({
-        components: {
-          ElTree,
-          ElEmpty,
-          ElDialog,
-          ElUpload,
-          ElContainer,
-          ElAside,
-          ElMain,
-          UploadFilled
-        },
         setup() {
-          const file = ref(null);
-          const treeRef = ref(null);
-          const dialogVisible = ref(false);
-          const currentMedia = ref(null);
-          const currentFolderId = ref("root");
-
-          // 模拟文件树结构
-          // 在实际应用中，这里应该通过后端API获取真实的目录结构
-          const fileTree = ref([
-            {
-              id: "root",
-              name: "root-test",
-              path: "./root-test",
-              isDir: true,
-              children: [
-                {
-                  id: "file1",
-                  name: "images (1).jpeg",
-                  path: "./root-test/images (1).jpeg",
-                  isDir: false
-                },
-                {
-                  id: "file2",
-                  name: "images.jpeg",
-                  path: "./root-test/images.jpeg",
-                  isDir: false
-                },
-                {
-                  id: "subfolder1",
-                  name: "子文件夹1",
-                  path: "./root-test/subfolder1",
-                  isDir: true,
-                  children: [
-                    {
-                      id: "subfile1",
-                      name: "subimage1.jpg",
-                      path: "./root-test/subfolder1/subimage1.jpg",
-                      isDir: false
-                    }
-                  ]
-                }
-              ]
+          function createNode(label, type) {
+            return {
+              label,
+              type,
+              fileType: '',
+              children: [],
+              files: [],
+              parent: null,
             }
-          ]);
-
-          // 树状图配置
-          const treeProps = {
-            children: "children",
-            label: (data) => {
-              if (data.isDir) {
-                return `<span class="folder-icon"><i class="el-icon-folder"></i> ${data.name}</span>`;
-              } else if (isImage(data.name)) {
-                return `<span class="image-icon"><i class="el-icon-picture"></i> ${data.name}</span>`;
-              } else {
-                return `<span class="video-icon"><i class="el-icon-video-camera"></i> ${data.name}</span>`;
-              }
-            },
-            isLeaf: (data) => !data.isDir
-          };
-
-          // 获取当前路径
-          const currentPath = computed(() => {
-            // 在实际应用中，这里应该根据 currentFolderId 构建完整路径
-            if (currentFolderId.value === "root") {
-              return "/root-test";
-            } else if (currentFolderId.value === "subfolder1") {
-              return "/root-test/子文件夹1";
+          }
+          function dfs(node) {
+            // 处理当前节点
+            const res = createNode(node.name, 'folder')
+            // 处理 children
+            for (let i = 0; i < node.children.length; i++) {
+              const element = node.children[i]
+              const child = dfs(element)
+              child.parent = res // 设置父节点
+              res.children.push(child)
             }
-            return "/root-test";
-          });
-
-          // 获取当前文件夹中的文件
-          const currentFiles = computed(() => {
-            // 递归查找当前文件夹
-            const findFolder = (nodes, id) => {
-              for (const node of nodes) {
-                if (node.id === id) {
-                  return node;
-                }
-                if (node.children) {
-                  const found = findFolder(node.children, id);
-                  if (found) return found;
-                }
-              }
-              return null;
-            };
-
-            const folder = findFolder(fileTree.value, currentFolderId.value);
-            if (folder && folder.children) {
-              // 返回非目录文件
-              return folder.children.filter((item) => !item.isDir);
+            // 处理 files
+            for (let i = 0; i < node.files.length; i++) {
+              const element = node.files[i]
+              const child = createNode(element, 'file')
+              child.parent = res // 设置父节点F
+              child.fileType = getFileType(child)
+              res.files.push(child)
             }
-            return [];
-          });
+            return res
+          }
 
-          // 处理节点点击
-          const handleNodeClick = (data) => {
-            if (data.isDir) {
-              // 点击的是文件夹，切换当前文件夹
-              currentFolderId.value = data.id;
-            } else {
-              // 点击的是文件，查看媒体
-              viewMedia(data);
+          function getFileType(child) {
+            const postfix = child.label.replace(/.+\./, '')
+            if (['jpg', 'jpeg', 'png', 'webp'].includes(postfix)) {
+              return 'image'
             }
-          };
-
-          // 查看媒体
-          const viewMedia = (file) => {
-            currentMedia.value = file;
-            dialogVisible.value = true;
-          };
-
-          // 判断是否为图片
-          const isImage = (fileName) => {
-            const imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "svg"];
-            const extension = fileName.split(".").pop().toLowerCase();
-            return imageExtensions.includes(extension);
-          };
-
-          // 获取文件类型
-          const getFileType = (fileName) => {
-            const extension = fileName.split(".").pop().toUpperCase();
-            return `${extension} 文件`;
-          };
-
-          const beforeUpload = (files) => {
-            console.log(files);
-            // 如何读取文件夹中的内容
-
-            return;
-
-            const isJpgOrPng =
-              file.type === "image/jpeg" || file.type === "image/png";
-            if (!isJpgOrPng) {
-              ElMessage.error("上传图片只能是 JPG/PNG 格式!");
+            if (['mp4', 'webm'].includes(postfix)) {
+              return 'video'
             }
-            return isJpgOrPng;
-          };
+            return 'unknow'
+          }
+
+          const menuTree = ref([dfs(JSON.parse(menus))])
+
+          const currentFloder = ref({})
+          function onChooseFloder(node) {
+            currentFloder.value = node.data
+            scrolltoTop(`content-0`)
+          }
+
+          function scrolltoTop(id) {
+            const el = document.getElementById(id)
+            el.scrollIntoView({
+              behavior: 'smooth', // 平滑滚动
+              block: 'start', // 对齐到容器的顶部
+            })
+          }
+
           return {
-            file,
-            beforeUpload,
-            treeRef,
-            fileTree,
-            treeProps,
-            currentFiles,
-            currentPath,
-            dialogVisible,
-            currentMedia,
-            handleNodeClick,
-            viewMedia,
-            isImage,
-            getFileType
-          };
-        }
+            scrolltoTop,
+            menuTree,
+            currentFloder,
+            onChooseFloder,
+          }
+        },
       })
         .use(ElementPlus)
-        .mount("#app");
+        .component('Folder', Folder)
+        .component('Memo', Memo)
+        .mount('#app')
     </script>
   </body>
 </html>
