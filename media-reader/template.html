@@ -59,7 +59,11 @@
       .container {
         & > * {
           padding: 12px;
+          padding-right: 0;
           height: 100vh;
+        }
+        & > *:last-child {
+          padding-right: 12px;
         }
       }
 
@@ -80,7 +84,7 @@
           height: calc(50% - 24px);
         }
       }
-      .main-content {
+      #main-content {
         padding: 8px;
         border-radius: 8px;
         background-color: var(--aside-color);
@@ -104,7 +108,8 @@
       }
 
       .setting {
-        height: calc(100% - 16px);
+        padding: 8px;
+        border-radius: 8px;
         background-color: var(--aside-color);
       }
       .el-tree {
@@ -155,6 +160,7 @@
             <el-col style="height: calc(100% - 24px); overflow-y: scroll">
               <el-row
                 style="cursor: pointer; padding-left: 8px"
+                :style="{color: index === idx ? '#5493ff' : undefined}"
                 v-for="file,idx in subMenu"
                 @click="()=>onClickSubMenu(idx)"
                 v-show="file.fileType === settingForm.curMod"
@@ -168,14 +174,15 @@
 
         <!-- content -->
         <el-main style="position: relative">
-          <div class="main-content">
+          <!-- <div style="text-align: center;">{{ subMenu?.[index]?.label?.replace(/.+\//g, "")}}</div> -->
+
+          <div id="main-content">
             <template v-if="settingForm.curMod === 'video'">
               <video
                 id="my-video"
                 class="video"
                 controls
                 preload="auto"
-                data-setup="{}"
                 v-if="subMenu?.[index]?.label"
               >
                 <source :src="subMenu[index].label" type="video/mp4" />
@@ -190,9 +197,11 @@
                 class="media-box"
                 v-for="(child, idx) in currentFloder.files"
                 :key="idx"
+                :style="imgStyle"
               >
                 <el-image
-                  style="width: 100%"
+                  style="height: 100%"
+                  :style="{width: settingForm.picLayoutMod === '0' ? '100%' : undefined}"
                   v-if="child.fileType === 'image'"
                   :src="child.label"
                 ></el-image>
@@ -206,10 +215,11 @@
                 :id="`content-${index}`"
                 class="media-box"
                 @click="onPageTurn"
+                :style="imgStyle"
               >
                 <el-image
+                  style="width: 100%; height: 100%"
                   v-if="subMenu?.[index]?.label"
-                  style="width: 100%"
                   :src="subMenu[index].label"
                 ></el-image>
               </div>
@@ -217,50 +227,62 @@
           </div>
         </el-main>
 
-        <el-aside class="setting" style="width: 280px">
-          <el-form>
-            <el-form-item label="当前模式">
-              <el-radio-group
-                v-model="settingForm.curMod"
-                aria-label="label position"
-              >
-                <el-radio-button value="image">看图</el-radio-button>
-                <el-radio-button value="video">看视频</el-radio-button>
-              </el-radio-group>
-            </el-form-item>
+        <el-aside style="width: 260px">
+          <div class="setting">
+            <h2>
+              <el-icon style="top: 2px; margin-right: 4px">
+                <setting /> </el-icon
+              >设置
+            </h2>
 
-            <el-form-item label="翻看模式">
-              <el-select
-                v-model="settingForm.picReadMod"
-                placeholder="Select"
-                style="width: 240px"
-              >
-                <el-option :key="0" label="上下滑动" value="0"></el-option>
-                <el-option :key="1" label="左右翻看" value="1"></el-option>
-              </el-select>
-            </el-form-item>
+            <el-form>
+              <el-form-item label="媒体类型">
+                <el-radio-group
+                  v-model="settingForm.curMod"
+                  aria-label="label position"
+                >
+                  <el-radio-button value="image">图片</el-radio-button>
+                  <el-radio-button value="video">视频</el-radio-button>
+                </el-radio-group>
+              </el-form-item>
 
-            <el-form-item label="图片大小">
-              <el-select
-                v-model="settingForm.picLayoutMod"
-                placeholder="Select"
-                style="width: 240px"
-              >
-                <el-option :key="0" label="宽度撑满" value="0"></el-option>
-                <el-option :key="0" label="高度撑满" value="1"></el-option>
-                <el-option :key="0" label="原始比例" value="1"></el-option>
-              </el-select>
+              <el-form-item label="翻看模式">
+                <el-select
+                  v-model="settingForm.picReadMod"
+                  placeholder="Select"
+                >
+                  <el-option :key="0" label="上下滑动" value="0"></el-option>
+                  <el-option :key="1" label="左右翻看" value="1"></el-option>
+                </el-select>
+              </el-form-item>
 
-              <el-slider v-model="value1" />
-            </el-form-item>
-          </el-form>
+              <el-form-item label="图片大小">
+                <el-select
+                  v-model="settingForm.picLayoutMod"
+                  placeholder="Select"
+                >
+                  <el-option :key="0" label="宽度撑满" value="0"></el-option>
+                  <el-option :key="1" label="高度撑满" value="1"></el-option>
+                  <el-option :key="2" label="原始比例" value="2"></el-option>
+                </el-select>
+
+                <el-slider
+                  style="width: 80%; margin: auto"
+                  size="small"
+                  :min="33"
+                  v-model="settingForm.picZoom"
+                  :marks="{33:'33%', 100:'100%'}"
+                />
+              </el-form-item>
+            </el-form>
+          </div>
         </el-aside>
       </el-container>
     </div>
 
     <script>
       const { createApp, ref, onMounted, computed, watch } = Vue;
-      const { Folder, Memo } = ElementPlusIconsVue;
+      const { Folder, Memo, Setting } = ElementPlusIconsVue;
 
       const menus = `{{ template }}`;
 
@@ -311,21 +333,41 @@
         setup() {
           const menuTree = ref(dfs(JSON.parse(menus)).children);
 
-          const settingForm = ref({
-            curMod: "video",
-            picLayoutMod: "0",
-            picReadMod: "1"
+          const settings = JSON.parse(localStorage.getItem("__setting__"));
+          const settingForm = ref(
+            settings || {
+              curMod: "video",
+              picLayoutMod: "0",
+              picZoom: 100,
+              picReadMod: "1"
+            }
+          );
+          watch(
+            settingForm,
+            () => {
+              localStorage.setItem(
+                "__setting__",
+                JSON.stringify(settingForm.value)
+              );
+            },
+            { deep: true }
+          );
+          const imgStyle = computed(() => {
+            let res = "margin: auto;";
+            const zoom = settingForm.value.picZoom;
+            if (settingForm.value.picLayoutMod === "0") {
+              res += `width: ${zoom}%;`;
+            }
+            if (settingForm.value.picLayoutMod === "1") {
+              res += `height: ${zoom}%;`;
+            }
+            return res;
           });
 
           const currentFloder = ref({});
 
           const subMenu = computed(() => {
             onClickSubMenu(0);
-            console.log(
-              currentFloder.value?.files?.filter(
-                (i) => i.fileType === settingForm.value.curMod
-              ) || []
-            );
 
             return (
               currentFloder.value?.files?.filter(
@@ -345,13 +387,11 @@
           function onClickSubMenu(idx) {
             if (settingForm.value.picReadMod === "0") {
               const el = document.getElementById(`content-${idx}`);
-              el.scrollIntoView({
+              el?.scrollIntoView({
                 block: "start"
               });
             }
-            if (settingForm.value.picReadMod === "1") {
-              index.value = idx;
-            }
+            index.value = idx;
           }
 
           function go(i) {
@@ -372,6 +412,25 @@
             go(i);
           }
 
+          onMounted(() => {
+            const box = document.getElementById("main-content");
+            box?.addEventListener("scrollend", (e) => {
+              if (
+                settingForm.value.curMod === "image" &&
+                settingForm.value.picReadMod === "0"
+              ) {
+                let res = 0;
+                for (let i = 0; i < box.children.length; i++) {
+                  const child = box.children[i];
+                  if (box.scrollTop > child.offsetTop) {
+                    res = i;
+                  }
+                }
+                index.value = res;
+              }
+            });
+          });
+
           return {
             onClickSubMenu,
             subMenu,
@@ -379,13 +438,15 @@
             currentFloder,
             settingForm,
             index,
-            onPageTurn
+            onPageTurn,
+            imgStyle
           };
         }
       })
         .use(ElementPlus)
         .component("Folder", Folder)
         .component("Memo", Memo)
+        .component("Setting", Setting)
         .mount("#app");
     </script>
   </body>
