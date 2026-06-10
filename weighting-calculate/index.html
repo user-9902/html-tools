@@ -33,6 +33,7 @@
           <el-button
             @click="addTable"
             type="primary"
+            size="small"
             >新建表格</el-button
           >
         </template>
@@ -43,11 +44,42 @@
           :label="item.name"
           :name="String(index)"
         >
+          <!-- 顶部工具栏 -->
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <el-button
+                size="small"
+                @click="addRow(item.rowDatas.length)"
+                >+ 添加行</el-button
+              >
+              <el-button
+                size="small"
+                @click="addCol(item.colConfig.length)"
+                >+ 添加维度</el-button
+              >
+            </div>
+            <div class="toolbar-right">
+              <el-button
+                size="small"
+                @click="exportData(index)"
+                >导出数据</el-button
+              >
+              <el-button
+                size="small"
+                type="danger"
+                plain
+                @click="resetTable(index)"
+                >重置表格</el-button
+              >
+            </div>
+          </div>
+
           <el-table
-            height="calc(100vh - 40px)"
+            height="calc(100vh - 120px)"
             :data="item.rowDatas"
             stripe
             border
+            :row-class-name="tableRowClassName"
           >
             <el-table-column
               type="index"
@@ -63,229 +95,199 @@
                 >
                   <p>{{scope.$index + 1 }}</p>
 
-                  <el-tooltip
-                    placement="right"
-                    :width="200"
-                    trigger="hover"
+                  <el-dropdown
+                    trigger="click"
+                    @command="(cmd) => handleRowCommand(cmd, scope.$index)"
                   >
-                    <template #default>
-                      <svg
-                        class="icon-more"
-                        data-v-d2e47025=""
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 1024 1024"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M176 416a112 112 0 1 0 0 224 112 112 0 0 0 0-224m0 64a48 48 0 1 1 0 96 48 48 0 0 1 0-96m336-64a112 112 0 1 1 0 224 112 112 0 0 1 0-224m0 64a48 48 0 1 0 0 96 48 48 0 0 0 0-96m336-64a112 112 0 1 1 0 224 112 112 0 0 1 0-224m0 64a48 48 0 1 0 0 96 48 48 0 0 0 0-96"
-                        ></path>
-                      </svg>
+                    <svg
+                      class="icon-more"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 1024 1024"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M176 416a112 112 0 1 0 0 224 112 112 0 0 0 0-224m0 64a48 48 0 1 1 0 96 48 48 0 0 1 0-96m336-64a112 112 0 1 1 0 224 112 112 0 0 1 0-224m0 64a48 48 0 1 0 0 96 48 48 0 0 0 0-96m336-64a112 112 0 1 1 0 224 112 112 0 0 1 0-224m0 64a48 48 0 1 0 0 96 48 48 0 0 0 0-96"
+                      ></path>
+                    </svg>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="insertAbove">上方插入一行</el-dropdown-item>
+                        <el-dropdown-item command="insertBelow">下方插入一行</el-dropdown-item>
+                        <el-dropdown-item command="moveUp" :disabled="scope.$index === 0">上移</el-dropdown-item>
+                        <el-dropdown-item command="moveDown" :disabled="scope.$index === item.rowDatas.length - 1">下移</el-dropdown-item>
+                        <el-dropdown-item command="delete" divided>删除当前行</el-dropdown-item>
+                      </el-dropdown-menu>
                     </template>
-
-                    <template #content>
-                      <div>
-                        <p
-                          style="cursor: pointer"
-                          @click="addRow(scope.$index)"
-                          >上方插入一行</p
-                        >
-                        <p
-                          style="cursor: pointer"
-                          @click="addRow(scope.$index+1)"
-                          >下方插入一行</p
-                        >
-                        <p
-                          style="cursor: pointer"
-                          @click="swapRow(scope.$index-1, scope.$index)"
-                          >上移</p
-                        >
-                        <p
-                          style="cursor: pointer"
-                          @click="swapRow(scope.$index,scope.$index+1)"
-                          >下移</p
-                        >
-                        <p
-                          style="cursor: pointer"
-                          @click="delRow(scope.$index)"
-                          >删除当前行</p
-                        >
-                      </div>
-                    </template>
-                  </el-tooltip>
+                  </el-dropdown>
                 </el-row>
               </template>
             </el-table-column>
 
             <el-table-column
               align="center"
-              width="160"
+              width="140"
               label="名称"
               fixed
             >
               <template #default="{row}">
-                <el-row
-                  align="middle"
-                  style="flex-wrap: nowrap"
-                >
-                  <input
-                    type="text"
-                    placeholder="请输入该条数据名称"
-                    v-model="row.name"
-                  />
-                </el-row>
+                <input
+                  type="text"
+                  class="input-name"
+                  placeholder="输入名称"
+                  v-model="row.name"
+                />
               </template>
             </el-table-column>
 
             <el-table-column
-              v-for="(col,index) in item.colConfig"
+              v-for="(col,colIndex) in item.colConfig"
               :key="col.key"
-              min-width="300"
+              min-width="280"
             >
               <template #header="scope">
-                <el-tooltip
-                  placement="bottom"
-                  :width="200"
+                <el-dropdown
                   trigger="click"
+                  @command="(cmd) => handleColCommand(cmd, colIndex)"
                 >
-                  <template #default>
-                    <el-col>
-                      <el-row>
-                        <p>维度名称： </p>
-                        <input
-                          type="text"
-                          v-model="col.name"
-                          @click.stop
-                        />
-                      </el-row>
-
-                      <el-row>
-                        <p>维度权值： </p>
-                        <input
-                          type="text"
-                          v-model.number="col.weight"
-                          @click.stop
-                        />
-                      </el-row>
-                    </el-col>
-                  </template>
-
-                  <template #content>
-                    <div>
-                      <p
-                        style="cursor: pointer"
-                        @click="addCol(scope.$index-2)"
-                        >左侧插入一列</p
-                      >
-                      <p
-                        style="cursor: pointer"
-                        @click="addCol(scope.$index-1)"
-                        >右侧插入一列</p
-                      >
-                      <p
-                        style="cursor: pointer"
-                        @click="delCol(scope.$index-2)"
-                        >删除当前列</p
-                      >
+                  <div class="col-header">
+                    <div class="col-header-name">
+                      <span v-if="col.name" class="col-name-text">{{ col.name }}</span>
+                      <span v-else class="col-name-placeholder">维度{{ colIndex + 1 }}</span>
+                      <span class="col-weight-badge" v-if="col.weight != null">×{{ col.weight }}</span>
                     </div>
+                    <svg class="icon-more" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+                      <path fill="currentColor" d="M176 416a112 112 0 1 0 0 224 112 112 0 0 0 0-224m0 64a48 48 0 1 1 0 96 48 48 0 0 1 0-96m336-64a112 112 0 1 1 0 224 112 112 0 0 1 0-224m0 64a48 48 0 1 0 0 96 48 48 0 0 0 0-96m336-64a112 112 0 1 1 0 224 112 112 0 0 1 0-224m0 64a48 48 0 1 0 0 96 48 48 0 0 0 0-96"></path>
+                    </svg>
+                  </div>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="editCol">编辑维度信息</el-dropdown-item>
+                      <el-dropdown-item command="insertLeft">左侧插入一列</el-dropdown-item>
+                      <el-dropdown-item command="insertRight">右侧插入一列</el-dropdown-item>
+                      <el-dropdown-item command="delete" divided :disabled="item.colConfig.length <= 1">删除当前列</el-dropdown-item>
+                    </el-dropdown-menu>
                   </template>
-                </el-tooltip>
+                </el-dropdown>
               </template>
 
               <template #default="{row}">
-                <el-col>
-                  <el-row>
-                    <p>得分： </p>
+                <div class="cell-content">
+                  <div class="cell-score">
+                    <label>得分</label>
                     <input
-                      type="text"
-                      v-model.number="row.values[index]"
+                      type="number"
+                      v-model.number="row.values[colIndex]"
                       placeholder="请输入"
                     />
-                  </el-row>
-
-                  <el-row>
-                    <p style="font-size: 14px; color: #999">备注： </p>
+                  </div>
+                  <div class="cell-remark">
+                    <label>备注</label>
                     <input
-                      style="font-size: 14px; color: #999"
                       type="text"
-                      v-model.number="row.commons[index]"
-                      placeholder="请输入"
+                      v-model="row.commons[colIndex]"
+                      placeholder="选填"
                     />
-                  </el-row>
-                </el-col>
+                  </div>
+                </div>
               </template>
             </el-table-column>
 
             <el-table-column
               align="center"
               sortable
-              width="120"
+              width="130"
               label="加权均值"
               prop="res"
               fixed="right"
             >
+              <template #default="{row}">
+                <span
+                  v-if="row.res != null"
+                  class="result-value"
+                  :class="{'result-top': isTopResult(row)}"
+                >{{ row.res }}</span>
+                <span v-else class="result-empty">-</span>
+              </template>
             </el-table-column>
           </el-table>
+
+          <!-- 底部汇总 -->
+          <div class="summary-bar">
+            <div class="summary-item">
+              <span class="summary-label">选项数：</span>
+              <span class="summary-value">{{ item.rowDatas.length }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">维度数：</span>
+              <span class="summary-value">{{ item.colConfig.length }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">权重合计：</span>
+              <span class="summary-value" :class="{'weight-warning': getWeightSum(item) !== 1 && getWeightSum(item) !== 100}">
+                {{ getWeightSum(item) }}
+              </span>
+              <el-tooltip
+                v-if="getWeightSum(item) !== 1 && getWeightSum(item) !== 100"
+                content="权重合计不等于 1 或 100，计算仍会按加权平均进行"
+                placement="top"
+              >
+                <el-icon style="margin-left: 4px; color: #E6A23C;"><Warning /></el-icon>
+              </el-tooltip>
+            </div>
+            <div class="summary-item" v-if="item.rowDatas.length > 0 && getTopResult(item)">
+              <span class="summary-label">最优选项：</span>
+              <span class="summary-value result-top">{{ getTopResult(item) }}</span>
+            </div>
+          </div>
 
           <template #label>
             <input
               type="text"
-              placeholder="请输入表格名称"
-              style="width: 100px"
+              placeholder="表格名称"
+              class="tab-name-input"
               v-model="item.name"
             />
           </template>
         </el-tab-pane>
       </el-tabs>
+
+      <!-- 编辑维度的对话框 -->
+      <el-dialog
+        v-model="colEditDialogVisible"
+        title="编辑维度信息"
+        width="360px"
+      >
+        <el-form label-width="80px">
+          <el-form-item label="维度名称">
+            <el-input
+              v-model="editingCol.name"
+              placeholder="请输入维度名称"
+            />
+          </el-form-item>
+          <el-form-item label="维度权值">
+            <el-input-number
+              v-model="editingCol.weight"
+              :precision="2"
+              :step="0.1"
+              placeholder="请输入权值"
+            />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="colEditDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmColEdit">确认</el-button>
+        </template>
+      </el-dialog>
     </div>
 
     <script>
-      const { createApp, ref, watchEffect, computed, useTemplateRef } = Vue
-      const { ElMessageBox } = ElementPlus
+      const { createApp, ref, watchEffect, computed, nextTick } = Vue
+      const { ElMessageBox, ElMessage } = ElementPlus
 
-      // utils
-      class SnowFlake {
-        last_timestamp = BigInt(-1)
-        worker_id = undefined
-        sequence = BigInt(0)
-
-        timestamp_bit = BigInt(41)
-        worker_bit = BigInt(10)
-        sequence_bit = BigInt(12)
-
-        sequence_shift = BigInt(0)
-        worker_shift = this.sequence_bit
-        timestamp_shift = this.sequence_bit + this.worker_bit
-
-        constructor(worker_id) {
-          this.worker_id = BigInt(worker_id)
-        }
-
-        generate_id() {
-          let timestamp = BigInt(new Date().getTime())
-          let sequence
-          if (timestamp === this.last_timestamp) {
-            sequence = this.sequence + BigInt(1)
-            if (sequence === BigInt(1) << this.sequence_bit) {
-              timestamp = BigInt(new Date().getTime())
-              while (timestamp === this.last_timestamp) {
-                timestamp = BigInt(new Date().getTime())
-              }
-            }
-          } else {
-            sequence = BigInt(0)
-          }
-          this.sequence = sequence
-          this.last_timestamp = timestamp
-          return String(
-            BigInt(sequence) |
-              BigInt(this.worker_id << this.worker_shift) |
-              BigInt(timestamp << this.timestamp_shift),
-          )
-        }
-      }
-      const snowFlake = new SnowFlake(1)
+      // utils - 简易 ID 生成
+      let _id = 0
       function nextId() {
-        return snowFlake.generate_id()
+        return String(++_id) + '_' + Date.now()
       }
 
       // module
@@ -300,9 +302,9 @@
       }
 
       class Col {
-        constructor() {
-          this.name = ''
-          this.weight = null
+        constructor(name = '', weight = null) {
+          this.name = name
+          this.weight = weight
           this.key = nextId()
         }
       }
@@ -316,78 +318,96 @@
         }
       }
 
-      // module
+      // 从 localStorage 恢复数据
       let t = localStorage.getItem('__tables__')
         ? JSON.parse(localStorage.getItem('__tables__'))
         : [new Table()]
 
       const app = createApp({
-        el: '#app',
-
         setup() {
-          const aaaaRef = useTemplateRef('aaaa')
-          console.log(aaaaRef)
-
           const activeTable = ref(
             localStorage.getItem('__activeTable__') ?? '0',
           )
           const tables = ref(t)
           const curTable = computed(() => tables.value[activeTable.value])
 
+          // 编辑维度对话框
+          const colEditDialogVisible = ref(false)
+          const editingCol = ref({ name: '', weight: null, colIndex: -1 })
+
           // 计算加权均值
           watchEffect(() => {
-            console.log(curTable.value)
-            curTable.value.rowDatas.forEach((row, i) => {
+            if (!curTable.value) return
+            curTable.value.rowDatas.forEach((row) => {
               let a = 0
               let b = 0
 
               for (let i = 0; i < row.values.length; i++) {
-                a += curTable.value.colConfig[i].weight * row.values[i]
-                b += curTable.value.colConfig[i].weight
+                const weight = curTable.value.colConfig[i]?.weight
+                const value = row.values[i]
+                // 只有权重和得分都有效时才参与计算
+                if (weight != null && value != null && !isNaN(weight) && !isNaN(value)) {
+                  a += weight * value
+                  b += weight
+                }
               }
-              if (isNaN(a / b)) return
-              row.res = (a / b).toFixed(2)
+              if (b === 0 || isNaN(a / b)) {
+                row.res = null
+              } else {
+                row.res = Number((a / b).toFixed(2))
+              }
             })
           })
-          // 缓存
+
+          // 缓存到 localStorage
           watchEffect(() => {
             localStorage.setItem('__activeTable__', activeTable.value)
-
             localStorage.setItem('__tables__', JSON.stringify(tables.value))
           })
 
           function addTable() {
             tables.value.push(new Table())
-            activeTable.value = Number(activeTable.value) + 1 + ''
+            activeTable.value = String(tables.value.length - 1)
           }
 
           function addRow(i) {
+            if (!curTable.value) return
             curTable.value.rowDatas.splice(i, 0, new Row())
           }
 
           function delRow(i) {
+            if (!curTable.value) return
+            if (curTable.value.rowDatas.length <= 1) {
+              ElMessage.warning('至少保留一行数据')
+              return
+            }
             curTable.value.rowDatas.splice(i, 1)
           }
 
           function swapRow(a, b) {
-            if (a < 0) return
-            if (b == curTable.value.rowDatas.length) return
-
-            let a_row = curTable.value.rowDatas[a]
-            let b_row = curTable.value.rowDatas[b]
-            curTable.value.rowDatas[a] = b_row
-            curTable.value.rowDatas[b] = a_row
+            if (!curTable.value) return
+            if (a < 0 || b >= curTable.value.rowDatas.length) return
+            // 使用 splice 触发 Vue 响应式更新
+            const temp = curTable.value.rowDatas[a]
+            curTable.value.rowDatas.splice(a, 1, curTable.value.rowDatas[b])
+            curTable.value.rowDatas.splice(b, 1, temp)
           }
 
           function addCol(i) {
+            if (!curTable.value) return
             curTable.value.colConfig.splice(i, 0, new Col())
             curTable.value.rowDatas.forEach(item => {
               item.values.splice(i, 0, null)
-              item.commons.splice(i, 0, null)
+              item.commons.splice(i, 0, '')
             })
           }
 
           function delCol(i) {
+            if (!curTable.value) return
+            if (curTable.value.colConfig.length <= 1) {
+              ElMessage.warning('至少保留一个维度')
+              return
+            }
             curTable.value.rowDatas.forEach(item => {
               item.values.splice(i, 1)
               item.commons.splice(i, 1)
@@ -396,25 +416,177 @@
           }
 
           async function handleTabsEdit(targetName, action) {
-            if (action == 'remove') {
+            if (action === 'remove') {
+              if (tables.value.length <= 1) {
+                ElMessage.warning('至少保留一个表格')
+                return
+              }
               activeTable.value = targetName
-              await ElMessageBox.confirm('确认删除当前表格么？', '警告', {
+              await ElMessageBox.confirm('确认删除当前表格么？此操作不可撤销', '警告', {
                 confirmButtonText: '确认',
                 cancelButtonText: '取消',
                 type: 'warning',
-                confirmButtonClass: 'ExitConfirmButton',
               })
 
               const idx = Number(targetName)
               tables.value.splice(idx, 1)
-              activeTable.value = String(idx - 1)
+              // 修复边界：删除后 activeTable 不能越界
+              const newIdx = Math.min(idx, tables.value.length - 1)
+              activeTable.value = String(newIdx)
             }
+          }
+
+          // 行操作命令分发
+          function handleRowCommand(command, rowIndex) {
+            switch (command) {
+              case 'insertAbove':
+                addRow(rowIndex)
+                break
+              case 'insertBelow':
+                addRow(rowIndex + 1)
+                break
+              case 'moveUp':
+                swapRow(rowIndex - 1, rowIndex)
+                break
+              case 'moveDown':
+                swapRow(rowIndex, rowIndex + 1)
+                break
+              case 'delete':
+                delRow(rowIndex)
+                break
+            }
+          }
+
+          // 列操作命令分发
+          function handleColCommand(command, colIndex) {
+            switch (command) {
+              case 'editCol':
+                openColEditDialog(colIndex)
+                break
+              case 'insertLeft':
+                addCol(colIndex)
+                break
+              case 'insertRight':
+                addCol(colIndex + 1)
+                break
+              case 'delete':
+                delCol(colIndex)
+                break
+            }
+          }
+
+          // 打开编辑维度对话框
+          function openColEditDialog(colIndex) {
+            if (!curTable.value) return
+            const col = curTable.value.colConfig[colIndex]
+            editingCol.value = {
+              name: col.name,
+              weight: col.weight,
+              colIndex: colIndex,
+            }
+            colEditDialogVisible.value = true
+          }
+
+          // 确认编辑维度
+          function confirmColEdit() {
+            if (!curTable.value) return
+            const { colIndex, name, weight } = editingCol.value
+            curTable.value.colConfig[colIndex].name = name
+            curTable.value.colConfig[colIndex].weight = weight
+            colEditDialogVisible.value = false
+          }
+
+          // 获取权重合计
+          function getWeightSum(table) {
+            if (!table || !table.colConfig) return 0
+            return table.colConfig.reduce((sum, col) => {
+              return sum + (col.weight != null && !isNaN(col.weight) ? col.weight : 0)
+            }, 0)
+          }
+
+          // 获取最高分选项名称
+          function getTopResult(table) {
+            if (!table || !table.rowDatas || table.rowDatas.length === 0) return null
+            let topRow = null
+            let topRes = -Infinity
+            table.rowDatas.forEach(row => {
+              if (row.res != null && row.res > topRes) {
+                topRes = row.res
+                topRow = row
+              }
+            })
+            return topRow ? (topRow.name || '未命名') : null
+          }
+
+          // 判断当前行是否为最高分
+          function isTopResult(row) {
+            if (!curTable.value || row.res == null) return false
+            let maxRes = -Infinity
+            curTable.value.rowDatas.forEach(r => {
+              if (r.res != null && r.res > maxRes) maxRes = r.res
+            })
+            return row.res === maxRes
+          }
+
+          // 导出数据
+          function exportData(tableIndex) {
+            const table = tables.value[tableIndex]
+            if (!table) return
+
+            const headers = ['序号', '名称', ...table.colConfig.map((col, i) => col.name || `维度${i + 1}`), '加权均值']
+            const rows = table.rowDatas.map((row, i) => {
+              const scores = table.colConfig.map((_, ci) => {
+                let cell = row.values[ci] != null ? row.values[ci] : ''
+                if (row.commons[ci]) {
+                  cell += `(${row.commons[ci]})`
+                }
+                return cell
+              })
+              return [i + 1, row.name || '', ...scores, row.res != null ? row.res : '']
+            })
+
+            // 权重行
+            const weightRow = ['', '权重', ...table.colConfig.map(col => col.weight != null ? col.weight : ''), '']
+            rows.push(weightRow)
+
+            const csvContent = [headers, ...rows].map(r => r.join(',')).join('\n')
+            const BOM = '\uFEFF'
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `${table.name || '加权均值计算'}_${new Date().toLocaleDateString()}.csv`
+            link.click()
+            URL.revokeObjectURL(url)
+            ElMessage.success('导出成功')
+          }
+
+          // 重置表格
+          async function resetTable(tableIndex) {
+            await ElMessageBox.confirm('确认重置当前表格？所有数据将被清空', '警告', {
+              confirmButtonText: '确认重置',
+              cancelButtonText: '取消',
+              type: 'warning',
+            })
+            tables.value[tableIndex] = new Table()
+            if (Number(activeTable.value) === tableIndex) {
+              activeTable.value = String(tableIndex)
+            }
+            ElMessage.success('表格已重置')
+          }
+
+          // 表格行样式
+          function tableRowClassName({ row }) {
+            if (isTopResult(row)) return 'top-result-row'
+            return ''
           }
 
           return {
             // data
             tables,
             activeTable,
+            colEditDialogVisible,
+            editingCol,
 
             // methods
             addTable,
@@ -424,6 +596,16 @@
             addCol,
             delCol,
             handleTabsEdit,
+            handleRowCommand,
+            handleColCommand,
+            openColEditDialog,
+            confirmColEdit,
+            getWeightSum,
+            getTopResult,
+            isTopResult,
+            exportData,
+            resetTable,
+            tableRowClassName,
           }
         },
       })
@@ -432,24 +614,78 @@
     </script>
 
     <style>
+      :root {
+        --primary-color: #409eff;
+        --success-color: #67c23a;
+        --warning-color: #e6a23c;
+        --bg-color: #f5f7fa;
+        --text-primary: #303133;
+        --text-regular: #606266;
+        --text-secondary: #909399;
+        --border-color: #ebeef5;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
         padding: 0;
+        background-color: var(--bg-color);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       }
 
       input {
         display: block;
         width: max-content;
-        min-width: 68px;
-        font-size: 16px;
-        color: #777;
-        border: none;
+        min-width: 60px;
+        font-size: 14px;
+        color: var(--text-primary);
+        border: 1px solid transparent;
         outline: none;
-        background-color: rgba(0, 0, 0, 0);
+        background-color: transparent;
+        border-radius: 4px;
+        padding: 2px 6px;
+        transition: border-color 0.2s;
+      }
+      input:hover {
+        border-color: var(--border-color);
+      }
+      input:focus {
+        border-color: var(--primary-color);
+        background-color: #fff;
       }
       input::placeholder {
-        font-size: 14px;
-        color: #999;
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+      input[type="number"] {
+        -moz-appearance: textfield;
+      }
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      .input-name {
+        width: 100px;
+        font-weight: 500;
+      }
+
+      .tab-name-input {
+        width: 80px;
+        text-align: center;
+        font-size: 13px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        padding: 2px 4px;
+        transition: border-color 0.2s;
+      }
+      .tab-name-input:focus {
+        border-color: var(--primary-color);
+        background-color: #fff;
       }
 
       p {
@@ -457,40 +693,153 @@
       }
 
       .icon-more {
-        width: 12px;
-        height: 12px;
+        width: 14px;
+        height: 14px;
         border-radius: 50%;
-        margin: 0 8px;
-        color: #999;
+        margin-left: 6px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+      .icon-more:hover {
+        color: var(--primary-color);
       }
 
-      .tips::after {
-        content: '?';
-        font-style: normal;
-        display: block;
-        border-radius: 50%;
-        border: 1px solid var(--el-table-header-text-color);
-      }
-
-      .label-fixed {
-        padding: 12px;
-        border-top: 1px solid #efefef;
-        width: 100%;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        margin-top: 20px;
-        text-align: center;
-        justify-content: space-around;
+      /* 工具栏 */
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
         align-items: center;
-        background-color: white;
-        z-index: 10;
+        padding: 8px 16px;
+        background: #fff;
+        border-bottom: 1px solid var(--border-color);
       }
+      .toolbar-left,
+      .toolbar-right {
+        display: flex;
+        gap: 8px;
+      }
+
+      /* 列头样式 */
+      .col-header {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        gap: 4px;
+        padding: 4px 0;
+      }
+      .col-header:hover .icon-more {
+        color: var(--primary-color);
+      }
+      .col-header-name {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+      }
+      .col-name-text {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 13px;
+      }
+      .col-name-placeholder {
+        font-weight: 400;
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-style: italic;
+      }
+      .col-weight-badge {
+        display: inline-block;
+        font-size: 11px;
+        color: var(--primary-color);
+        background: #ecf5ff;
+        border-radius: 8px;
+        padding: 0 6px;
+        line-height: 18px;
+      }
+
+      /* 单元格内容 */
+      .cell-content {
+        padding: 4px 0;
+      }
+      .cell-score,
+      .cell-remark {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin: 2px 0;
+      }
+      .cell-score label {
+        font-size: 12px;
+        color: var(--text-regular);
+        white-space: nowrap;
+        min-width: 28px;
+      }
+      .cell-remark label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        min-width: 28px;
+      }
+      .cell-remark input {
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+
+      /* 结果列 */
+      .result-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+      .result-empty {
+        color: var(--text-secondary);
+        font-size: 14px;
+      }
+      .result-top {
+        color: var(--success-color) !important;
+      }
+
+      /* 最高分行高亮 */
+      .el-table .top-result-row {
+        --el-table-tr-bg-color: #f0f9eb;
+      }
+
+      /* 汇总栏 */
+      .summary-bar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 24px;
+        padding: 8px 16px;
+        background: #fff;
+        border-top: 1px solid var(--border-color);
+        font-size: 13px;
+      }
+      .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .summary-label {
+        color: var(--text-secondary);
+      }
+      .summary-value {
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+      .weight-warning {
+        color: var(--warning-color) !important;
+      }
+
+      /* Element Plus 覆盖 */
       .el-tabs__nav-scroll {
-        border-top: 1px solid #ccc;
+        border-top: 1px solid #dcdfe6;
+        background: #fff;
       }
       .el-tabs__active-bar {
         top: 0;
+        bottom: auto;
       }
       .el-tabs__new-tab {
         width: max-content;
@@ -498,6 +847,9 @@
       }
       .el-tabs--bottom .el-tabs__header.is-bottom {
         margin-top: 0;
+      }
+      .el-table .el-table__cell {
+        padding: 6px 0;
       }
     </style>
   </body>
