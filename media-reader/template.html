@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -13,47 +13,59 @@
     <script src="https://unpkg.com/element-plus"></script>
     <script src="https://unpkg.com/@element-plus/icons-vue"></script>
     <style>
-      /* var */
+      /* CSS 变量 */
       :root {
-        --color-gary-0: #fff;
-        --color-gary-1: #f7f7f7;
-        --color-gary-2: #e3e5e7;
-        --color-gary-3: #c9ccd0;
+        --color-gray-0: #fff;
+        --color-gray-1: #f7f7f7;
+        --color-gray-2: #e3e5e7;
+        --color-gray-3: #c9ccd0;
 
-        --color-gary-9: #2f3238;
-        --color-gary-10: #18191c;
+        --color-gray-9: #2f3238;
+        --color-gray-10: #18191c;
         --color-gray-99: #000;
+
+        /* 主题色 */
+        --primary-color: #409eff;
+        --primary-color-light: #5493ff;
+        --border-radius: 8px;
+        --transition-speed: 0.25s;
       }
 
       body[theme="theme-dark"] {
-        --bg-color: var(--color-gary-9);
-        --aside-color: var(--color-gary-10);
-        --font-color: var(--color-gary-1);
-        --hover-color: var(--color-gary-99);
-        --active-color: var(--color-gary-9);
+        --bg-color: var(--color-gray-9);
+        --aside-color: var(--color-gray-10);
+        --font-color: var(--color-gray-1);
+        --hover-color: var(--color-gray-99);
+        --active-color: var(--color-gray-9);
       }
 
       body[theme="theme-light"] {
-        --bg-color: var(--color-gary-1);
-        --aside-color: var(--color-gary-2);
-        --font-color: var(--color-gary-99);
-        --hover-color: var(--color-gary-3);
+        --bg-color: var(--color-gray-1);
+        --aside-color: var(--color-gray-2);
+        --font-color: var(--color-gray-99);
+        --hover-color: var(--color-gray-3);
       }
 
-      /* 样式 */
+      /* 基础样式 */
       body {
         margin: 0;
         color: var(--font-color);
+        transition:
+          background-color var(--transition-speed),
+          color var(--transition-speed);
       }
 
       h2 {
         font-size: 16px;
         margin: 0;
         margin-bottom: 4px;
+        display: flex;
+        align-items: center;
       }
 
       #app {
         background-color: var(--bg-color);
+        min-height: 100vh;
       }
 
       .container {
@@ -61,6 +73,7 @@
           padding: 12px;
           padding-right: 0;
           height: 100vh;
+          transition: background-color var(--transition-speed);
         }
         & > *:last-child {
           padding-right: 12px;
@@ -71,47 +84,80 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        .menus1 {
-          padding: 8px;
-          background-color: var(--aside-color);
-          border-radius: 8px;
-          height: calc(50% - 24px);
-        }
+        gap: 12px;
+        .menus1,
         .menus2 {
           padding: 8px;
-          border-radius: 8px;
           background-color: var(--aside-color);
-          height: calc(50% - 24px);
+          border-radius: var(--border-radius);
+          height: calc(50% - 18px);
+          overflow: hidden;
         }
       }
+
       #main-content {
         padding: 8px;
-        border-radius: 8px;
+        border-radius: var(--border-radius);
         background-color: var(--aside-color);
         height: calc(100% - 16px);
         overflow-y: scroll;
+        scroll-behavior: smooth;
+
         .media-box {
           display: flex;
           flex-direction: column;
           align-items: center;
         }
-        /* 第一个是自定义光标的URL，之后是可选的默认光标类型 */
-        cursor: url("https://pic.616pic.com/ys_bnew_img/00/03/99/EKtSyM1ed8.jpg")
-            20 20,
-          url("https://pic.616pic.com/ys_bnew_img/00/03/99/EKtSyM1ed8.jpg"),
-          auto;
+
+        /* 宽度撑满模式 */
+        .media-box.fit-width {
+          width: 100%;
+          min-height: 0;
+        }
+        .media-box.fit-width .el-image {
+          width: 100%;
+        }
+
+        /* 高度撑满模式：容器占满可视高度 */
+        .media-box.fit-height {
+          height: 100%;
+          min-width: 0;
+        }
+        .media-box.fit-height .el-image {
+          height: 100%;
+        }
+
+        /* 原始比例模式 */
+        .media-box.fit-original .el-image {
+          max-width: 100%;
+          max-height: 100%;
+        }
+
+        /* 翻页模式下高度撑满需要固定容器高度 */
+        &.page-turn-mode .media-box.fit-height {
+          height: calc(100vh - 56px);
+        }
       }
+
+      /* 翻页模式下的光标提示 */
+      #main-content.page-turn-mode {
+        cursor: pointer;
+      }
+
       .video {
         margin: auto;
         width: 100%;
         height: calc(100% - 16px);
+        border-radius: var(--border-radius);
       }
 
       .setting {
         padding: 8px;
-        border-radius: 8px;
+        border-radius: var(--border-radius);
         background-color: var(--aside-color);
       }
+
+      /* Element Plus 组件样式覆盖 */
       .el-tree {
         background-color: transparent;
         color: var(--font-color);
@@ -120,33 +166,174 @@
         background-color: var(--hover-color);
       }
 
-      /* reset */
+      /* 文件列表项样式 */
+      .file-item {
+        cursor: pointer;
+        padding: 8px;
+        padding-left: 16px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .file-item:hover {
+        background-color: var(--hover-color);
+      }
+      .file-item.active {
+        color: var(--primary-color-light);
+        font-weight: 500;
+      }
+
+      /* 底部信息栏 */
+      .status-bar {
+        position: fixed;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 6px 18px;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-radius: 20px;
+        font-size: 12px;
+        color: #fff;
+        z-index: 99;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .status-bar__file {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        opacity: 0.8;
+      }
+      .status-bar__page {
+        opacity: 0.7;
+        letter-spacing: 0.5px;
+      }
+      .status-bar__shortcut {
+        opacity: 0.6;
+      }
+      .status-bar__shortcut kbd {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin: 0 2px;
+        font-family: monospace;
+      }
+
+      /* 主题切换按钮 */
+      .theme-switch {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 999;
+        cursor: pointer;
+        font-size: 20px;
+        transition: transform 0.3s;
+        color: var(--font-color);
+        background: var(--aside-color);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .theme-switch:hover {
+        transform: scale(1.1);
+      }
+
+      /* 空状态提示 */
+      .empty-hint {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 200px;
+      }
+
+      /* 树节点标签 */
+      .tree-node-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* 全屏预览遮罩层高斯模糊 */
+      .el-image-viewer__mask {
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        background: rgba(0, 0, 0, 0.6);
+        opacity: 1;
+      }
     </style>
   </head>
 
-  <body theme="theme-dark">
+  <body :theme="theme">
+    <!-- 主题切换按钮 -->
+    <div
+      class="theme-switch"
+      @click="toggleTheme"
+      :title="theme === 'theme-dark' ? '切换亮色模式' : '切换暗色模式'"
+    >
+      <el-icon :size="20"
+        ><component :is="theme === 'theme-dark' ? 'Sunny' : 'Moon'"
+      /></el-icon>
+    </div>
+
     <div id="app">
+      <!-- 底部信息栏 -->
+      <div class="status-bar">
+        <!-- 当前文件名 -->
+        <span
+          class="status-bar__file"
+          v-if="currentFile"
+          :title="currentFile.label"
+        >
+          {{ getFileName(currentFile.label) }}
+        </span>
+        <!-- 页码 -->
+        <span class="status-bar__page" v-if="subMenu.length > 1">
+          {{ index + 1 }} / {{ subMenu.length }}
+        </span>
+        <!-- 快捷键提示 -->
+        <span
+          class="status-bar__shortcut"
+          v-if="settingForm.curMod === 'image' && settingForm.picReadMod === '1' && subMenu.length > 0"
+        >
+          <kbd>←</kbd> <kbd>→</kbd> 翻页 &nbsp; <kbd>Space</kbd> 全屏
+        </span>
+      </div>
+
       <el-container class="container">
-        <el-aside class="menus" style="width: 300px">
+        <el-aside class="menus" style="width: 280px">
           <div class="menus1">
             <h2>
-              <el-icon style="top: 2px; margin-right: 4px"> <folder /> </el-icon
-              >文件夹目录
+              <el-icon style="margin-right: 6px"><folder /></el-icon>文件夹目录
             </h2>
             <el-tree
               :data="menuTree"
+              :props="treeProps"
+              :default-expand-all="true"
+              node-key="label"
+              highlight-current
+              @node-click="onFolderClick"
               style="height: calc(100% - 24px); overflow-y: scroll"
             >
               <template #default="{ node, data }">
                 <el-tooltip
-                  class="box-item"
                   effect="dark"
                   :content="node.label"
                   placement="right-start"
+                  :show-after="500"
                 >
-                  <p style="flex: 2" @click="currentFloder = node.data">
-                    {{ node.label }}
-                  </p>
+                  <span class="tree-node-label">{{ node.label }}</span>
                 </el-tooltip>
               </template>
             </el-tree>
@@ -154,124 +341,170 @@
 
           <div class="menus2">
             <h2>
-              <el-icon style="top: 2px; margin-right: 4px"><memo /></el-icon
-              >文件目录
-            </h2>
-            <el-col style="height: calc(100% - 24px); overflow-y: scroll">
-              <el-row
-                style="cursor: pointer; padding-left: 8px"
-                :style="{color: index === idx ? '#5493ff' : undefined}"
-                v-for="file,idx in subMenu"
-                @click="()=>onClickSubMenu(idx)"
-                v-show="file.fileType === settingForm.curMod"
-                :key="idx"
+              <el-icon style="margin-right: 6px"><memo /></el-icon>文件目录
+              <span
+                style="
+                  margin-left: auto;
+                  font-size: 12px;
+                  font-weight: normal;
+                  opacity: 0.6;
+                "
               >
-                {{file.label.replace(/.+\//g, "")}}
-              </el-row>
-            </el-col>
+                {{ subMenu.length }} 项
+              </span>
+            </h2>
+            <div style="height: calc(100% - 24px); overflow-y: scroll">
+              <div
+                class="file-item"
+                :class="{ active: index === idx }"
+                v-for="(file, idx) in subMenu"
+                @click="onClickSubMenu(idx)"
+                :key="idx"
+                :title="file.label"
+              >
+                {{ getFileName(file.label) }}
+              </div>
+              <div
+                v-if="subMenu.length === 0"
+                style="
+                  padding: 20px;
+                  text-align: center;
+                  opacity: 0.5;
+                  font-size: 13px;
+                "
+              >
+                暂无{{ settingForm.curMod === 'image' ? '图片' : '视频' }}文件
+              </div>
+            </div>
           </div>
         </el-aside>
 
-        <!-- content -->
+        <!-- 主内容区 -->
         <el-main style="position: relative">
-          <!-- <div style="text-align: center;">{{ subMenu?.[index]?.label?.replace(/.+\//g, "")}}</div> -->
-
-          <div id="main-content">
+          <div
+            id="main-content"
+            :class="{ 'page-turn-mode': settingForm.curMod === 'image' && settingForm.picReadMod === '1' }"
+          >
+            <!-- 视频模式 -->
             <template v-if="settingForm.curMod === 'video'">
               <video
-                id="my-video"
+                ref="videoRef"
                 class="video"
                 controls
-                preload="auto"
-                v-if="subMenu?.[index]?.label"
+                preload="metadata"
+                v-if="currentFile"
+                :key="index"
               >
-                <source :src="subMenu[index].label" type="video/mp4" />
+                <source
+                  :src="currentFile.label"
+                  :type="getVideoType(currentFile.label)"
+                />
+                您的浏览器不支持视频播放
               </video>
+              <div v-else class="empty-hint">
+                <el-icon :size="48" style="opacity: 0.3"
+                  ><video-camera
+                /></el-icon>
+                <p style="opacity: 0.5; margin-top: 12px">暂无视频文件</p>
+              </div>
             </template>
 
+            <!-- 图片 - 上下滑动模式 -->
             <template
-              v-if="settingForm.curMod === 'image' && settingForm.picReadMod === '0'"
+              v-else-if="settingForm.curMod === 'image' && settingForm.picReadMod === '0'"
             >
               <div
                 :id="`content-${idx}`"
                 class="media-box"
-                v-for="(child, idx) in currentFloder.files"
+                :class="imgFitClass"
+                :style="imgZoomStyle"
+                v-for="(child, idx) in imageFileList"
                 :key="idx"
-                :style="imgStyle"
               >
                 <el-image
-                  style="height: 100%"
-                  :style="{width: settingForm.picLayoutMod === '0' ? '100%' : undefined}"
-                  v-if="child.fileType === 'image'"
                   :src="child.label"
+                  :fit="imgFitMode"
+                  :preview-src-list="previewSrcList"
+                  :initial-index="idx"
+                  preview-teleported
                 ></el-image>
+              </div>
+              <div v-if="imageFileList.length === 0" class="empty-hint">
+                <el-icon :size="48" style="opacity: 0.3"><picture /></el-icon>
+                <p style="opacity: 0.5; margin-top: 12px">暂无图片文件</p>
               </div>
             </template>
 
+            <!-- 图片 - 左右翻页模式 -->
             <template
-              v-if="settingForm.curMod === 'image' && settingForm.picReadMod === '1'"
+              v-else-if="settingForm.curMod === 'image' && settingForm.picReadMod === '1'"
             >
               <div
                 :id="`content-${index}`"
                 class="media-box"
+                :class="imgFitClass"
+                :style="imgZoomStyle"
                 @click="onPageTurn"
-                :style="imgStyle"
               >
                 <el-image
-                  style="width: 100%; height: 100%"
-                  v-if="subMenu?.[index]?.label"
-                  :src="subMenu[index].label"
+                  v-if="currentFile"
+                  :src="currentFile.label"
+                  :key="index"
+                  :fit="imgFitMode"
+                  :preview-src-list="previewSrcList"
+                  :initial-index="index"
+                  preview-teleported
                 ></el-image>
+                <div v-else class="empty-hint">
+                  <el-icon :size="48" style="opacity: 0.3"><picture /></el-icon>
+                  <p style="opacity: 0.5; margin-top: 12px">暂无图片文件</p>
+                </div>
               </div>
             </template>
           </div>
         </el-main>
 
-        <el-aside style="width: 260px">
+        <el-aside style="width: 240px">
           <div class="setting">
             <h2>
-              <el-icon style="top: 2px; margin-right: 4px">
-                <setting /> </el-icon
-              >设置
+              <el-icon style="margin-right: 6px"><setting /></el-icon>设置
             </h2>
 
-            <el-form>
+            <el-form label-width="70px" size="small">
               <el-form-item label="媒体类型">
-                <el-radio-group
-                  v-model="settingForm.curMod"
-                  aria-label="label position"
-                >
+                <el-radio-group v-model="settingForm.curMod" size="small">
                   <el-radio-button value="image">图片</el-radio-button>
                   <el-radio-button value="video">视频</el-radio-button>
                 </el-radio-group>
               </el-form-item>
 
-              <el-form-item label="翻看模式">
-                <el-select
-                  v-model="settingForm.picReadMod"
-                  placeholder="Select"
-                >
-                  <el-option :key="0" label="上下滑动" value="0"></el-option>
-                  <el-option :key="1" label="左右翻看" value="1"></el-option>
+              <el-form-item
+                label="翻看模式"
+                v-if="settingForm.curMod === 'image'"
+              >
+                <el-select v-model="settingForm.picReadMod" size="small">
+                  <el-option label="上下滑动" value="0"></el-option>
+                  <el-option label="左右翻看" value="1"></el-option>
                 </el-select>
               </el-form-item>
 
-              <el-form-item label="图片大小">
-                <el-select
-                  v-model="settingForm.picLayoutMod"
-                  placeholder="Select"
-                >
-                  <el-option :key="0" label="宽度撑满" value="0"></el-option>
-                  <el-option :key="1" label="高度撑满" value="1"></el-option>
-                  <el-option :key="2" label="原始比例" value="2"></el-option>
+              <el-form-item
+                label="图片适配"
+                v-if="settingForm.curMod === 'image'"
+              >
+                <el-select v-model="settingForm.picLayoutMod" size="small">
+                  <el-option label="宽度撑满" value="0"></el-option>
+                  <el-option label="高度撑满" value="1"></el-option>
+                  <el-option label="原始比例" value="2"></el-option>
                 </el-select>
 
                 <el-slider
-                  style="width: 80%; margin: auto"
+                  style="width: 90%; margin: 8px auto 0"
                   size="small"
                   :min="33"
+                  :max="200"
                   v-model="settingForm.picZoom"
-                  :marks="{33:'33%', 100:'100%'}"
+                  :marks="{33:'33%', 100:'100%', 200:'200%'}"
                 />
               </el-form-item>
             </el-form>
@@ -281,10 +514,21 @@
     </div>
 
     <script>
-      const { createApp, ref, onMounted, computed, watch } = Vue;
-      const { Folder, Memo, Setting } = ElementPlusIconsVue;
+      const {
+        createApp,
+        ref,
+        onMounted,
+        onUnmounted,
+        computed,
+        watch,
+        nextTick
+      } = Vue;
+      const { Folder, Memo, Setting, Sunny, Moon, Picture, VideoCamera } =
+        ElementPlusIconsVue;
 
       const menus = `{{ template }}`;
+
+      // ========== 工具函数 ==========
 
       function createNode(label, type) {
         return {
@@ -297,78 +541,96 @@
         };
       }
 
+      /** 深度优先遍历，将原始数据转为树形结构 */
       function dfs(node) {
-        // 处理当前节点
         const res = createNode(node.name, "folder");
-        // 处理 children
-        for (let i = 0; i < node.children.length; i++) {
-          const element = node.children[i];
-          const child = dfs(element);
-          child.parent = res; // 设置父节点
-          res.children.push(child);
+        for (const child of node.children) {
+          const c = dfs(child);
+          c.parent = res;
+          res.children.push(c);
         }
-        // 处理 files
-        for (let i = 0; i < node.files.length; i++) {
-          const element = node.files[i];
-          const child = createNode(element, "file");
-          child.parent = res; // 设置父节点F
+        for (const file of node.files) {
+          const child = createNode(file, "file");
+          child.parent = res;
           child.fileType = getFileType(child);
           res.files.push(child);
         }
         return res;
       }
 
+      /** 根据文件后缀判断媒体类型 */
       function getFileType(child) {
-        const postfix = child.label.replace(/.+\./, "");
-        if (["jpg", "jpeg", "png", "webp"].includes(postfix)) {
+        const postfix = child.label.replace(/.+\./, "").toLowerCase();
+        if (
+          ["jpg", "jpeg", "png", "webp", "gif", "bmp", "svg"].includes(postfix)
+        )
           return "image";
-        }
-        if (["mp4", "webm"].includes(postfix)) {
-          return "video";
-        }
-        return "unknow";
+        if (["mp4", "webm", "ogg", "mov"].includes(postfix)) return "video";
+        return "unknown";
       }
+
+      /** 从路径中提取文件名 */
+      function getFileName(path) {
+        return path.replace(/.+\//, "");
+      }
+
+      /** 根据文件后缀获取视频 MIME 类型 */
+      function getVideoType(path) {
+        const postfix = path.replace(/.+\./, "").toLowerCase();
+        const map = {
+          mp4: "video/mp4",
+          webm: "video/webm",
+          ogg: "video/ogg",
+          mov: "video/quicktime"
+        };
+        return map[postfix] || "video/mp4";
+      }
+
+      // ========== Vue 应用 ==========
 
       createApp({
         setup() {
+          // ---- 数据定义 ----
           const menuTree = ref(dfs(JSON.parse(menus)).children);
+          const videoRef = ref(null);
+          const currentFloder = ref({});
+          const index = ref(0);
+          const theme = ref(localStorage.getItem("__theme__") || "theme-dark");
 
-          const settings = JSON.parse(localStorage.getItem("__setting__"));
+          // 树形组件配置
+          const treeProps = {
+            label: "label",
+            children: "children",
+            isLeaf: (data) => !data.children || data.children.length === 0
+          };
+
+          // 设置表单（从 localStorage 恢复）
+          let settings = null;
+          try {
+            settings = JSON.parse(localStorage.getItem("__setting__"));
+          } catch (_) {}
           const settingForm = ref(
             settings || {
-              curMod: "video",
+              curMod: "image",
               picLayoutMod: "0",
               picZoom: 100,
               picReadMod: "1"
             }
           );
+
+          // 监听设置变更，自动持久化
           watch(
             settingForm,
-            () => {
-              localStorage.setItem(
-                "__setting__",
-                JSON.stringify(settingForm.value)
-              );
+            (val) => {
+              localStorage.setItem("__setting__", JSON.stringify(val));
             },
             { deep: true }
           );
-          const imgStyle = computed(() => {
-            let res = "margin: auto;";
-            const zoom = settingForm.value.picZoom;
-            if (settingForm.value.picLayoutMod === "0") {
-              res += `width: ${zoom}%;`;
-            }
-            if (settingForm.value.picLayoutMod === "1") {
-              res += `height: ${zoom}%;`;
-            }
-            return res;
-          });
 
-          const currentFloder = ref({});
+          // ---- 计算属性 ----
 
+          /** 当前媒体类型过滤后的文件列表（纯计算，无副作用） */
           const subMenu = computed(() => {
-            onClickSubMenu(0);
-
             return (
               currentFloder.value?.files?.filter(
                 (i) => i.fileType === settingForm.value.curMod
@@ -376,70 +638,203 @@
             );
           });
 
-          const index = ref(0);
-          watch(index, () => {
-            if (settingForm.value.curMod === "video") {
-              const videoElement = document.getElementById("my-video");
-              videoElement?.load();
-              videoElement?.focus();
-            }
+          /** 当前选中的文件对象 */
+          const currentFile = computed(
+            () => subMenu.value[index.value] || null
+          );
+
+          /** 图片文件列表（用于上下滑动模式） */
+          const imageFileList = computed(
+            () =>
+              currentFloder.value?.files?.filter(
+                (i) => i.fileType === "image"
+              ) || []
+          );
+
+          /** 图片预览源列表（用于 el-image 的 preview） */
+          const previewSrcList = computed(() =>
+            imageFileList.value.map((i) => i.label)
+          );
+
+          /** 图片容器适配 class：控制宽度/高度撑满 */
+          const imgFitClass = computed(() => {
+            const mod = settingForm.value.picLayoutMod;
+            if (mod === "0") return "fit-width";
+            if (mod === "1") return "fit-height";
+            return "fit-original";
           });
+
+          /** el-image 的 fit 属性 */
+          const imgFitMode = computed(() => {
+            const mod = settingForm.value.picLayoutMod;
+            if (mod === "0") return "contain"; // 宽度撑满：宽度100%，高度自适应
+            if (mod === "1") return "contain"; // 高度撑满：高度100%，宽度自适应
+            return "contain"; // 原始比例：max约束
+          });
+
+          /** 缩放样式（通过 transform scale 实现，不影响布局流） */
+          const imgZoomStyle = computed(() => {
+            const zoom = settingForm.value.picZoom;
+            if (zoom === 100) return {};
+            const scale = zoom / 100;
+            return {
+              transform: `scale(${scale})`,
+              transformOrigin: "center center"
+            };
+          });
+
+          // ---- 方法 ----
+
+          /** 点击文件夹树节点 */
+          function onFolderClick(data) {
+            currentFloder.value = data;
+            index.value = 0;
+          }
+
+          /** 点击文件列表项 */
           function onClickSubMenu(idx) {
             if (settingForm.value.picReadMod === "0") {
+              // 上下滑动模式：滚动到对应位置
               const el = document.getElementById(`content-${idx}`);
-              el?.scrollIntoView({
-                block: "start"
-              });
+              el?.scrollIntoView({ block: "start" });
             }
             index.value = idx;
           }
 
+          /** 翻页：跳转到指定索引 */
           function go(i) {
-            // 判断点击位置是在中轴左侧还是右侧
-            if (i < 0 || i >= currentFloder.value.files.length) return;
+            const len = subMenu.value.length;
+            if (i < 0 || i >= len) return;
             index.value = i;
           }
 
+          /** 点击翻页区域处理（左半屏上一张/右半屏下一张） */
           function onPageTurn(e) {
-            // 获取被点击元素的位置和尺寸
             const rect = e.currentTarget.getBoundingClientRect();
-            // 计算元素的中轴位置
             const centerX = rect.left + rect.width / 2;
-            // 获取点击事件的x坐标
             const clickX = e.clientX;
-
-            const i = index.value + (clickX < centerX ? -1 : 1);
-            go(i);
+            const direction = clickX < centerX ? -1 : 1;
+            go(index.value + direction);
           }
 
+          /** 切换主题 */
+          function toggleTheme() {
+            theme.value =
+              theme.value === "theme-dark" ? "theme-light" : "theme-dark";
+            localStorage.setItem("__theme__", theme.value);
+          }
+
+          /** 键盘快捷键处理 */
+          function onKeyDown(e) {
+            // 仅在图片翻页模式下响应快捷键
+            if (
+              settingForm.value.curMod !== "image" ||
+              settingForm.value.picReadMod !== "1"
+            )
+              return;
+            if (subMenu.value.length === 0) return;
+
+            switch (e.key) {
+              case "ArrowLeft":
+                e.preventDefault();
+                go(index.value - 1);
+                break;
+              case "ArrowRight":
+                e.preventDefault();
+                go(index.value + 1);
+                break;
+              case " ":
+                e.preventDefault();
+                // 触发 el-image 的全屏预览（通过点击图片触发）
+                const imgEl = document.querySelector(
+                  ".media-box .el-image__inner"
+                );
+                imgEl?.click();
+                break;
+            }
+          }
+
+          // ---- 监听器 ----
+
+          // 当切换文件时，视频需要重新加载
+          watch(index, () => {
+            if (settingForm.value.curMod === "video" && videoRef.value) {
+              videoRef.value.load();
+              videoRef.value.focus();
+            }
+          });
+
+          // 当切换文件夹时，重置索引并自动滚动到顶部
+          watch(currentFloder, () => {
+            index.value = 0;
+            nextTick(() => {
+              const box = document.getElementById("main-content");
+              if (box) box.scrollTop = 0;
+            });
+          });
+
+          // ---- 生命周期 ----
+
           onMounted(() => {
+            // 应用主题到 body
+            document.body.setAttribute("theme", theme.value);
+
+            // 监听键盘事件
+            window.addEventListener("keydown", onKeyDown);
+
+            // 监听滚动结束事件（用于上下滑动模式同步索引）
             const box = document.getElementById("main-content");
-            box?.addEventListener("scrollend", (e) => {
+            box?.addEventListener("scrollend", () => {
               if (
                 settingForm.value.curMod === "image" &&
                 settingForm.value.picReadMod === "0"
               ) {
                 let res = 0;
                 for (let i = 0; i < box.children.length; i++) {
-                  const child = box.children[i];
-                  if (box.scrollTop > child.offsetTop) {
+                  if (box.scrollTop > box.children[i].offsetTop) {
                     res = i;
                   }
                 }
                 index.value = res;
               }
             });
+
+            // 默认选中第一个文件夹
+            if (menuTree.value.length > 0) {
+              currentFloder.value = menuTree.value[0];
+            }
           });
 
+          onUnmounted(() => {
+            window.removeEventListener("keydown", onKeyDown);
+          });
+
+          // ---- 暴露给模板 ----
           return {
-            onClickSubMenu,
-            subMenu,
+            // 数据
             menuTree,
             currentFloder,
             settingForm,
             index,
+            theme,
+            videoRef,
+            treeProps,
+            // 计算属性
+            subMenu,
+            currentFile,
+            imageFileList,
+            previewSrcList,
+            imgFitClass,
+            imgFitMode,
+            imgZoomStyle,
+            // 方法
+            onFolderClick,
+            onClickSubMenu,
             onPageTurn,
-            imgStyle
+            toggleTheme,
+            // 工具函数
+            getFileName,
+            getVideoType
           };
         }
       })
@@ -447,6 +842,10 @@
         .component("Folder", Folder)
         .component("Memo", Memo)
         .component("Setting", Setting)
+        .component("Sunny", Sunny)
+        .component("Moon", Moon)
+        .component("Picture", Picture)
+        .component("VideoCamera", VideoCamera)
         .mount("#app");
     </script>
   </body>
